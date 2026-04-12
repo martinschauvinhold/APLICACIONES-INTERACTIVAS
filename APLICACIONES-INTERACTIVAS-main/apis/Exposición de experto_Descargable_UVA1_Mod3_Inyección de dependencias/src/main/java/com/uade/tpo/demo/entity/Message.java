@@ -28,7 +28,7 @@ public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "message_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "ticket_id", nullable = false)

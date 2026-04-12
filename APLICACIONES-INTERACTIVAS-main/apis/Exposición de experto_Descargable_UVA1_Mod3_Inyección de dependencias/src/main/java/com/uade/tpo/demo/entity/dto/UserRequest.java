@@ -1,5 +1,6 @@
 package com.uade.tpo.demo.entity.dto;
 
+import com.uade.tpo.demo.entity.Role;
 import lombok.Data;
 
 @Data
@@ -9,6 +10,6 @@ public class UserRequest {
     private String passwordHash;
     private String firstName;
     private String lastName;
-    private String role;
+    private Role role;
     private String phone;
 }

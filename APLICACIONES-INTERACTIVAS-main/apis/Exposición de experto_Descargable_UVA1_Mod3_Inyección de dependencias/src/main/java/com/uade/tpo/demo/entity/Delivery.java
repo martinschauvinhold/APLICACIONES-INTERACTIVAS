@@ -28,7 +28,7 @@ public class Delivery {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "delivery_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)

@@ -29,7 +29,7 @@ public class Refund {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "refund_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "return_id", nullable = false)

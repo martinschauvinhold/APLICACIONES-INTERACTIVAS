@@ -26,7 +26,7 @@ public class PriceTier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tier_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "variant_id", nullable = false)

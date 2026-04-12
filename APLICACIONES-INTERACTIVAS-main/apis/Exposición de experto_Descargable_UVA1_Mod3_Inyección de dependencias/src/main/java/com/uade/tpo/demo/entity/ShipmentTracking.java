@@ -28,7 +28,7 @@ public class ShipmentTracking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tracking_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "delivery_id", nullable = false)

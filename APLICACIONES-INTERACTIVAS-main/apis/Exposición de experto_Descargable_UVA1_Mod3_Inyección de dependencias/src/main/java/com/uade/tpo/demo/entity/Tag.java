@@ -24,7 +24,7 @@ public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tag_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "product_id")

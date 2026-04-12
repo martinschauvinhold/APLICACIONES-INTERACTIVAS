@@ -28,7 +28,7 @@ public class Coupon {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "coupon_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "discount_id", nullable = false)

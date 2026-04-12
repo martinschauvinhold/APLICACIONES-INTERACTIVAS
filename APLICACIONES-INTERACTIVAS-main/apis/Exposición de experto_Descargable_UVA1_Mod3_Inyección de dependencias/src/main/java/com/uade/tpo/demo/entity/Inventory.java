@@ -28,7 +28,7 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "inventory_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "variant_id", nullable = false)

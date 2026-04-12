@@ -28,7 +28,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
-    private int id;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
@@ -43,6 +43,7 @@ public class Product {
     @Column(name = "brand")
     private String brand;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean isActive = true;
 

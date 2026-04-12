@@ -36,7 +36,8 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     public Payment createPayment(PaymentRequest paymentRequest) {
-        Order order = orderRepository.findById(paymentRequest.getOrderId()).get();
+        Order order = orderRepository.findById(paymentRequest.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found: " + paymentRequest.getOrderId()));
         Payment payment = Payment.builder()
                 .order(order)
                 .paymentMethod(paymentRequest.getPaymentMethod())
@@ -48,7 +49,8 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     public Payment updatePayment(int paymentId, PaymentRequest paymentRequest) {
-        Payment payment = paymentRepository.findById(paymentId).get();
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
         payment.setPaymentMethod(paymentRequest.getPaymentMethod());
         payment.setTransactionId(paymentRequest.getTransactionId());
         payment.setPaymentStatus(paymentRequest.getPaymentStatus());

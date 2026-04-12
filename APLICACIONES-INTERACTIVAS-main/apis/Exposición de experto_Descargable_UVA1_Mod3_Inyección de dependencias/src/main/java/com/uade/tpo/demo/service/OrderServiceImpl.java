@@ -41,8 +41,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     public Order createOrder(OrderRequest orderRequest) {
-        User user = userRepository.findById(orderRequest.getUserId()).get();
-        Address address = addressRepository.findById(orderRequest.getShippingAddressId()).get();
+        User user = userRepository.findById(orderRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + orderRequest.getUserId()));
+        Address address = addressRepository.findById(orderRequest.getShippingAddressId())
+                .orElseThrow(() -> new RuntimeException("Address not found: " + orderRequest.getShippingAddressId()));
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(address)

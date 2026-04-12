@@ -36,7 +36,8 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
 
     public ProductVariant createVariant(ProductVariantRequest variantRequest) {
-        Product product = productRepository.findById(variantRequest.getProductId()).get();
+        Product product = productRepository.findById(variantRequest.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found: " + variantRequest.getProductId()));
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
                 .sku(variantRequest.getSku())
@@ -48,7 +49,8 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
 
     public ProductVariant updateVariant(int variantId, ProductVariantRequest variantRequest) {
-        ProductVariant variant = productVariantRepository.findById(variantId).get();
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
         variant.setSku(variantRequest.getSku());
         variant.setAttributes(variantRequest.getAttributes());
         variant.setBasePrice(variantRequest.getBasePrice());
