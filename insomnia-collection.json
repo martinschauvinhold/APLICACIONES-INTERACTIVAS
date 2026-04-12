@@ -1,0 +1,471 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-04-10T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app",
+  "resources": [
+    {
+      "_id": "wrk_ecommerce",
+      "_type": "workspace",
+      "name": "E-Commerce API",
+      "description": "Tests para endpoints del proyecto Spring Boot E-Commerce"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_ecommerce",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080"
+      }
+    },
+
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "1. Usuarios"
+    },
+    {
+      "_id": "req_user_1",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Crear usuario cliente",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/users",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"juan.perez\",\n  \"email\": \"juan.perez@email.com\",\n  \"passwordHash\": \"hashed_password_123\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"role\": \"CUSTOMER\",\n  \"phone\": \"+5491155554444\"\n}"
+      }
+    },
+    {
+      "_id": "req_user_2",
+      "_type": "request",
+      "parentId": "fld_users",
+      "name": "Crear usuario admin",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/users",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"admin.garcia\",\n  \"email\": \"admin@tienda.com\",\n  \"passwordHash\": \"admin_hashed_456\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Garcia\",\n  \"role\": \"ADMIN\",\n  \"phone\": \"+5491166667777\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_warehouses",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "2. Depósitos"
+    },
+    {
+      "_id": "req_wh_1",
+      "_type": "request",
+      "parentId": "fld_warehouses",
+      "name": "Crear depósito central",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/warehouses",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Deposito Central Buenos Aires\",\n  \"location\": \"Av. Lugones 1234, CABA\",\n  \"contactPhone\": \"+5491100001111\"\n}"
+      }
+    },
+    {
+      "_id": "req_wh_2",
+      "_type": "request",
+      "parentId": "fld_warehouses",
+      "name": "Crear depósito zona sur",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/warehouses",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Deposito Zona Sur\",\n  \"location\": \"Calle Falsa 742, Lomas de Zamora\",\n  \"contactPhone\": \"+5491122223333\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_categories",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "3. Categorías"
+    },
+    {
+      "_id": "req_cat_1",
+      "_type": "request",
+      "parentId": "fld_categories",
+      "name": "Crear categoría Electrónica",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/categories",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Electrónica y tecnología\"\n}"
+      }
+    },
+    {
+      "_id": "req_cat_2",
+      "_type": "request",
+      "parentId": "fld_categories",
+      "name": "Crear categoría Ropa",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/categories",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Indumentaria y accesorios\"\n}"
+      }
+    },
+    {
+      "_id": "req_cat_3",
+      "_type": "request",
+      "parentId": "fld_categories",
+      "name": "Crear categoría Hogar",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/categories",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Artículos para el hogar\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_addresses",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "4. Direcciones"
+    },
+    {
+      "_id": "req_addr_1",
+      "_type": "request",
+      "parentId": "fld_addresses",
+      "name": "Crear dirección usuario 1",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/addresses",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"street\": \"Av. Corrientes 1500\",\n  \"city\": \"Buenos Aires\",\n  \"state\": \"CABA\",\n  \"zipCode\": \"1043\",\n  \"referenceNote\": \"Piso 3, depto B. Timbre apellido Perez\"\n}"
+      }
+    },
+    {
+      "_id": "req_addr_2",
+      "_type": "request",
+      "parentId": "fld_addresses",
+      "name": "Crear segunda dirección usuario 1",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/addresses",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"street\": \"Calle Rivadavia 800\",\n  \"city\": \"Córdoba\",\n  \"state\": \"Córdoba\",\n  \"zipCode\": \"5000\",\n  \"referenceNote\": \"Casa con portón verde\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_products",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "5. Productos"
+    },
+    {
+      "_id": "req_prod_1",
+      "_type": "request",
+      "parentId": "fld_products",
+      "name": "Crear producto: Notebook",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/products",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Notebook Lenovo IdeaPad 15\",\n  \"description\": \"Notebook 15.6\\\" Intel Core i5, 16GB RAM, 512GB SSD\",\n  \"brand\": \"Lenovo\",\n  \"categoryId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_prod_2",
+      "_type": "request",
+      "parentId": "fld_products",
+      "name": "Crear producto: Smartphone",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/products",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Samsung Galaxy A54\",\n  \"description\": \"Smartphone 6.4\\\" AMOLED, 128GB, cámara triple\",\n  \"brand\": \"Samsung\",\n  \"categoryId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_prod_3",
+      "_type": "request",
+      "parentId": "fld_products",
+      "name": "Crear producto: Remera",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/products",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Remera Algodón Premium\",\n  \"description\": \"Remera 100% algodón, corte recto\",\n  \"brand\": \"BasicWear\",\n  \"categoryId\": 2\n}"
+      }
+    },
+
+    {
+      "_id": "fld_variants",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "6. Variantes de Producto"
+    },
+    {
+      "_id": "req_var_1",
+      "_type": "request",
+      "parentId": "fld_variants",
+      "name": "Crear variante Notebook Negro",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/variants",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"sku\": \"LENOVO-IDEAPAD15-BLK\",\n  \"attributes\": \"{\\\"color\\\": \\\"Negro\\\", \\\"ram\\\": \\\"16GB\\\", \\\"storage\\\": \\\"512GB\\\"}\",\n  \"basePrice\": 850000.00\n}"
+      }
+    },
+    {
+      "_id": "req_var_2",
+      "_type": "request",
+      "parentId": "fld_variants",
+      "name": "Crear variante Notebook Gris",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/variants",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"sku\": \"LENOVO-IDEAPAD15-GRY\",\n  \"attributes\": \"{\\\"color\\\": \\\"Gris\\\", \\\"ram\\\": \\\"16GB\\\", \\\"storage\\\": \\\"512GB\\\"}\",\n  \"basePrice\": 850000.00\n}"
+      }
+    },
+    {
+      "_id": "req_var_3",
+      "_type": "request",
+      "parentId": "fld_variants",
+      "name": "Crear variante Remera M Rojo",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/variants",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 3,\n  \"sku\": \"BASICWEAR-REMERA-M-RED\",\n  \"attributes\": \"{\\\"talle\\\": \\\"M\\\", \\\"color\\\": \\\"Rojo\\\"}\",\n  \"basePrice\": 12500.00\n}"
+      }
+    },
+
+    {
+      "_id": "fld_inventory",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "7. Inventario"
+    },
+    {
+      "_id": "req_inv_1",
+      "_type": "request",
+      "parentId": "fld_inventory",
+      "name": "Stock variante 1 en depósito 1",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/inventory",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"variantId\": 1,\n  \"warehouseId\": 1,\n  \"stockQuantity\": 50\n}"
+      }
+    },
+    {
+      "_id": "req_inv_2",
+      "_type": "request",
+      "parentId": "fld_inventory",
+      "name": "Stock variante 2 en depósito 2",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/inventory",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"variantId\": 2,\n  \"warehouseId\": 2,\n  \"stockQuantity\": 30\n}"
+      }
+    },
+    {
+      "_id": "req_inv_3",
+      "_type": "request",
+      "parentId": "fld_inventory",
+      "name": "Stock variante 3 (remera) en depósito 1",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/inventory",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"variantId\": 3,\n  \"warehouseId\": 1,\n  \"stockQuantity\": 200\n}"
+      }
+    },
+
+    {
+      "_id": "fld_orders",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "8. Pedidos"
+    },
+    {
+      "_id": "req_ord_1",
+      "_type": "request",
+      "parentId": "fld_orders",
+      "name": "Crear pedido pendiente",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/orders",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"PENDING\"\n}"
+      }
+    },
+    {
+      "_id": "req_ord_2",
+      "_type": "request",
+      "parentId": "fld_orders",
+      "name": "Crear pedido confirmado",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/orders",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 2,\n  \"status\": \"CONFIRMED\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_payments",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "9. Pagos"
+    },
+    {
+      "_id": "req_pay_1",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "Pago con tarjeta de crédito",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payments",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"transactionId\": \"TXN-CC-20240410-001\",\n  \"paymentStatus\": \"APPROVED\"\n}"
+      }
+    },
+    {
+      "_id": "req_pay_2",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "Pago con transferencia bancaria",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/payments",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 2,\n  \"paymentMethod\": \"BANK_TRANSFER\",\n  \"transactionId\": \"TXN-BT-20240410-002\",\n  \"paymentStatus\": \"PENDING\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_deliveries",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "10. Entregas"
+    },
+    {
+      "_id": "req_del_1",
+      "_type": "request",
+      "parentId": "fld_deliveries",
+      "name": "Entrega estándar",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/deliveries",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"shippingMethod\": \"STANDARD\",\n  \"trackingNumber\": \"AR123456789\",\n  \"deliveryStatus\": \"DISPATCHED\"\n}"
+      }
+    },
+    {
+      "_id": "req_del_2",
+      "_type": "request",
+      "parentId": "fld_deliveries",
+      "name": "Entrega express",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/deliveries",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 2,\n  \"shippingMethod\": \"EXPRESS\",\n  \"trackingNumber\": \"AR987654321\",\n  \"deliveryStatus\": \"IN_TRANSIT\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_returns",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "11. Devoluciones"
+    },
+    {
+      "_id": "req_ret_1",
+      "_type": "request",
+      "parentId": "fld_returns",
+      "name": "Devolución por producto defectuoso",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/returns",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"reason\": \"Producto llegó con pantalla rota\",\n  \"status\": \"PENDING\"\n}"
+      }
+    },
+    {
+      "_id": "req_ret_2",
+      "_type": "request",
+      "parentId": "fld_returns",
+      "name": "Devolución por error en el pedido",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/returns",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 2,\n  \"reason\": \"Recibí un color diferente al pedido\",\n  \"status\": \"APPROVED\"\n}"
+      }
+    },
+
+    {
+      "_id": "fld_reviews",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "12. Reseñas"
+    },
+    {
+      "_id": "req_rev_1",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Reseña positiva (5 estrellas)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reviews",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"productId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Excelente notebook, muy rápida y buena batería. Llegó en perfecto estado.\"\n}"
+      }
+    },
+    {
+      "_id": "req_rev_2",
+      "_type": "request",
+      "parentId": "fld_reviews",
+      "name": "Reseña neutral (3 estrellas)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/reviews",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"productId\": 2,\n  \"rating\": 3,\n  \"comment\": \"Producto correcto pero la entrega tardó más de lo esperado.\"\n}"
+      }
+    }
+  ]
+}
