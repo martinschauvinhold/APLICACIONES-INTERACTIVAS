@@ -1,11 +1,8 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,54 +17,46 @@ import com.uade.tpo.demo.entity.ProductReturn;
 import com.uade.tpo.demo.entity.dto.ProductReturnRequest;
 import com.uade.tpo.demo.service.ProductReturnService;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("returns")
+@RequiredArgsConstructor
 public class ReturnsController {
 
-    @Autowired
-    private ProductReturnService productReturnService;
+    private final ProductReturnService productReturnService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<ProductReturn>> getReturns() {
+    public ResponseEntity<List<ProductReturn>> getReturns() {
         return ResponseEntity.ok(productReturnService.getReturns());
     }
 
     @GetMapping("/{returnId}")
-    public ResponseEntity<ProductReturn> getReturnById(@PathVariable int returnId) {
-        Optional<ProductReturn> result = productReturnService.getReturnById(returnId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ProductReturn> getReturnById(@PathVariable Integer returnId) {
+        return ResponseEntity.ok(productReturnService.getReturnById(returnId));
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<ProductReturn>> getReturnsByOrder(@PathVariable int orderId) {
+    public ResponseEntity<List<ProductReturn>> getReturnsByOrder(@PathVariable Integer orderId) {
         return ResponseEntity.ok(productReturnService.getReturnsByOrder(orderId));
     }
 
     @PostMapping
-    public ResponseEntity<Object> createReturn(@RequestBody ProductReturnRequest returnRequest) {
-        ProductReturn result = productReturnService.createReturn(returnRequest);
-        return ResponseEntity.created(URI.create("/returns/" + result.getId())).body(result);
+    public ResponseEntity<ProductReturn> createReturn(@Valid @RequestBody ProductReturnRequest request) {
+        ProductReturn created = productReturnService.createReturn(request);
+        return ResponseEntity.created(URI.create("/returns/" + created.getId())).body(created);
     }
 
     @PutMapping("/{returnId}")
-    public ResponseEntity<Object> updateReturn(@PathVariable int returnId, @RequestBody ProductReturnRequest returnRequest) {
-        Optional<ProductReturn> result = productReturnService.getReturnById(returnId);
-        if (result.isPresent()) {
-            ProductReturn updated = productReturnService.updateReturn(returnId, returnRequest);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<ProductReturn> updateReturn(@PathVariable Integer returnId,
+                                                       @Valid @RequestBody ProductReturnRequest request) {
+        return ResponseEntity.ok(productReturnService.updateReturn(returnId, request));
     }
 
     @DeleteMapping("/{returnId}")
-    public ResponseEntity<Object> deleteReturn(@PathVariable int returnId) {
-        Optional<ProductReturn> result = productReturnService.getReturnById(returnId);
-        if (result.isPresent()) {
-            productReturnService.deleteReturn(returnId);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteReturn(@PathVariable Integer returnId) {
+        productReturnService.deleteReturn(returnId);
+        return ResponseEntity.noContent().build();
     }
 }

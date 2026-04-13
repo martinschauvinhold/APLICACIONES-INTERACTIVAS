@@ -1,22 +1,20 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.uade.tpo.demo.entity.ProductReturn;
 import com.uade.tpo.demo.entity.dto.ProductReturnRequest;
 
 public interface ProductReturnService {
-    public ArrayList<ProductReturn> getReturns();
+    List<ProductReturn> getReturns();
 
-    public Optional<ProductReturn> getReturnById(int returnId);
+    ProductReturn getReturnById(Integer returnId);
 
-    public List<ProductReturn> getReturnsByOrder(int orderId);
+    List<ProductReturn> getReturnsByOrder(Integer orderId);
 
-    public ProductReturn createReturn(ProductReturnRequest returnRequest);
+    ProductReturn createReturn(ProductReturnRequest request);
 
-    public ProductReturn updateReturn(int returnId, ProductReturnRequest returnRequest);
+    ProductReturn updateReturn(Integer returnId, ProductReturnRequest request);
 
-    public void deleteReturn(int returnId);
+    void deleteReturn(Integer returnId);
 }
