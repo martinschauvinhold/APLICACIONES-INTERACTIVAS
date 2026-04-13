@@ -1,0 +1,1567 @@
+{
+  "info": {
+    "name": "E-Commerce API",
+    "description": "Colección completa de endpoints del proyecto E-Commerce Spring Boot. Configurar la variable baseUrl según el ambiente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Obtener usuario por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                { "key": "userId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jperez\",\n  \"email\": \"jperez@mail.com\",\n  \"passwordHash\": \"hashed_password_123\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"role\": \"buyer\",\n  \"phone\": \"+54 11 1234-5678\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jperez\",\n  \"email\": \"jperez@mail.com\",\n  \"passwordHash\": \"hashed_password_456\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"role\": \"buyer\",\n  \"phone\": \"+54 11 9999-0000\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                { "key": "userId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                { "key": "userId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categorías",
+      "item": [
+        {
+          "name": "Listar categorías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Obtener categoría por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/:categoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", ":categoryId"],
+              "variable": [
+                { "key": "categoryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear categoría",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Smartphones\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Smartphones y Tablets\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/categories/:categoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", ":categoryId"],
+              "variable": [
+                { "key": "categoryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/:categoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories", ":categoryId"],
+              "variable": [
+                { "key": "categoryId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Depósitos",
+      "item": [
+        {
+          "name": "Listar depósitos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warehouses",
+              "host": ["{{baseUrl}}"],
+              "path": ["warehouses"]
+            }
+          }
+        },
+        {
+          "name": "Obtener depósito por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warehouses/:warehouseId",
+              "host": ["{{baseUrl}}"],
+              "path": ["warehouses", ":warehouseId"],
+              "variable": [
+                { "key": "warehouseId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear depósito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Depósito Central\",\n  \"location\": \"Av. Constituyentes 1234, CABA\",\n  \"contactPhone\": \"+54 11 9876-5432\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/warehouses",
+              "host": ["{{baseUrl}}"],
+              "path": ["warehouses"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar depósito",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Depósito Norte\",\n  \"location\": \"Av. Maipú 500, Vicente López\",\n  \"contactPhone\": \"+54 11 5555-1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/warehouses/:warehouseId",
+              "host": ["{{baseUrl}}"],
+              "path": ["warehouses", ":warehouseId"],
+              "variable": [
+                { "key": "warehouseId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar depósito",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warehouses/:warehouseId",
+              "host": ["{{baseUrl}}"],
+              "path": ["warehouses", ":warehouseId"],
+              "variable": [
+                { "key": "warehouseId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Direcciones",
+      "item": [
+        {
+          "name": "Listar direcciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses"]
+            }
+          }
+        },
+        {
+          "name": "Obtener dirección por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/:addressId",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", ":addressId"],
+              "variable": [
+                { "key": "addressId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar direcciones por usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/user/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", "user", ":userId"],
+              "variable": [
+                { "key": "userId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear dirección",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"street\": \"Av. Corrientes 1234\",\n  \"city\": \"Buenos Aires\",\n  \"state\": \"CABA\",\n  \"zipCode\": \"1043\",\n  \"referenceNote\": \"Piso 3, Depto B\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar dirección",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"street\": \"Av. Santa Fe 5678\",\n  \"city\": \"Buenos Aires\",\n  \"state\": \"CABA\",\n  \"zipCode\": \"1425\",\n  \"referenceNote\": \"Planta baja\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/addresses/:addressId",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", ":addressId"],
+              "variable": [
+                { "key": "addressId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar dirección",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/:addressId",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", ":addressId"],
+              "variable": [
+                { "key": "addressId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Obtener producto por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/:productId",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", ":productId"],
+              "variable": [
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Samsung Galaxy S24\",\n  \"description\": \"Smartphone Android de última generación\",\n  \"brand\": \"Samsung\",\n  \"categoryId\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Samsung Galaxy S24 Ultra\",\n  \"description\": \"Smartphone Android con S-Pen\",\n  \"brand\": \"Samsung\",\n  \"categoryId\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/:productId",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", ":productId"],
+              "variable": [
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/:productId",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", ":productId"],
+              "variable": [
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Variantes de Producto",
+      "item": [
+        {
+          "name": "Listar variantes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants"]
+            }
+          }
+        },
+        {
+          "name": "Obtener variante por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/:variantId",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants", ":variantId"],
+              "variable": [
+                { "key": "variantId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar variantes por producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/product/:productId",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants", "product", ":productId"],
+              "variable": [
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear variante",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"SAM-S24-256-BLK\",\n  \"attributes\": \"256GB / Negro\",\n  \"basePrice\": 899.99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/variants",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar variante",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"SAM-S24-512-BLK\",\n  \"attributes\": \"512GB / Negro\",\n  \"basePrice\": 1099.99\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/variants/:variantId",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants", ":variantId"],
+              "variable": [
+                { "key": "variantId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar variante",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/variants/:variantId",
+              "host": ["{{baseUrl}}"],
+              "path": ["variants", ":variantId"],
+              "variable": [
+                { "key": "variantId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        {
+          "name": "Listar inventario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory"]
+            }
+          }
+        },
+        {
+          "name": "Obtener inventario por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/:inventoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", ":inventoryId"],
+              "variable": [
+                { "key": "inventoryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar inventario por variante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/variant/:variantId",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", "variant", ":variantId"],
+              "variable": [
+                { "key": "variantId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar inventario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variantId\": 1,\n  \"warehouseId\": 1,\n  \"stockQuantity\": 50\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar inventario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variantId\": 1,\n  \"warehouseId\": 1,\n  \"stockQuantity\": 35\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inventory/:inventoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", ":inventoryId"],
+              "variable": [
+                { "key": "inventoryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar inventario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inventory/:inventoryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["inventory", ":inventoryId"],
+              "variable": [
+                { "key": "inventoryId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Listar pedidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Obtener pedido por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar pedidos por usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/user/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "user", ":userId"],
+              "variable": [
+                { "key": "userId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear pedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"PENDING\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar pedido",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"CONFIRMED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar pedido",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items de Pedido",
+      "item": [
+        {
+          "name": "Obtener item por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order-items/:itemId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order-items", ":itemId"],
+              "variable": [
+                { "key": "itemId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar items por pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order-items/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order-items", "order", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar item a pedido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"variantId\": 1,\n  \"quantity\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order-items",
+              "host": ["{{baseUrl}}"],
+              "path": ["order-items"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar item de pedido",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/order-items/:itemId",
+              "host": ["{{baseUrl}}"],
+              "path": ["order-items", ":itemId"],
+              "variable": [
+                { "key": "itemId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pagos",
+      "item": [
+        {
+          "name": "Listar pagos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Obtener pago por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/:paymentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":paymentId"],
+              "variable": [
+                { "key": "paymentId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar pagos por pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "order", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar pago",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"transactionId\": \"TXN-20240101-001\",\n  \"paymentStatus\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar pago",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"transactionId\": \"TXN-20240101-001\",\n  \"paymentStatus\": \"REFUNDED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/:paymentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":paymentId"],
+              "variable": [
+                { "key": "paymentId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar pago",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/:paymentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", ":paymentId"],
+              "variable": [
+                { "key": "paymentId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reseñas",
+      "item": [
+        {
+          "name": "Listar reseñas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews"]
+            }
+          }
+        },
+        {
+          "name": "Obtener reseña por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/:reviewId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", ":reviewId"],
+              "variable": [
+                { "key": "reviewId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar reseñas por producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/product/:productId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", "product", ":productId"],
+              "variable": [
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear reseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"productId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Excelente celular, batería dura todo el día\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar reseña",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"productId\": 1,\n  \"rating\": 4,\n  \"comment\": \"Muy buen celular, la cámara es increíble\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reviews/:reviewId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", ":reviewId"],
+              "variable": [
+                { "key": "reviewId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar reseña",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reviews/:reviewId",
+              "host": ["{{baseUrl}}"],
+              "path": ["reviews", ":reviewId"],
+              "variable": [
+                { "key": "reviewId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entregas",
+      "item": [
+        {
+          "name": "Listar entregas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deliveries",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries"]
+            }
+          }
+        },
+        {
+          "name": "Obtener entrega por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deliveries/:deliveryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries", ":deliveryId"],
+              "variable": [
+                { "key": "deliveryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar entregas por pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deliveries/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries", "order", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear entrega",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"shippingMethod\": \"correo express\",\n  \"trackingNumber\": \"TRK-20240101-001\",\n  \"status\": \"PENDING\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deliveries",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar entrega",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"shippingMethod\": \"moto mensajero\",\n  \"trackingNumber\": \"TRK-20240101-001\",\n  \"status\": \"DISPATCHED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/deliveries/:deliveryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries", ":deliveryId"],
+              "variable": [
+                { "key": "deliveryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar entrega",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deliveries/:deliveryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries", ":deliveryId"],
+              "variable": [
+                { "key": "deliveryId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seguimiento de Envío",
+      "item": [
+        {
+          "name": "Obtener checkpoint por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracking/:trackingId",
+              "host": ["{{baseUrl}}"],
+              "path": ["tracking", ":trackingId"],
+              "variable": [
+                { "key": "trackingId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar checkpoints por entrega",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tracking/delivery/:deliveryId",
+              "host": ["{{baseUrl}}"],
+              "path": ["tracking", "delivery", ":deliveryId"],
+              "variable": [
+                { "key": "deliveryId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar checkpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryId\": 1,\n  \"checkpoint\": \"En depósito\",\n  \"status\": \"IN_TRANSIT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["tracking"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar estado de checkpoint",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DELIVERED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tracking/:trackingId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["tracking", ":trackingId", "status"],
+              "variable": [
+                { "key": "trackingId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devoluciones",
+      "item": [
+        {
+          "name": "Listar devoluciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns"]
+            }
+          }
+        },
+        {
+          "name": "Obtener devolución por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:returnId",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":returnId"],
+              "variable": [
+                { "key": "returnId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar devoluciones por pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/returns/order/:orderId",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", "order", ":orderId"],
+              "variable": [
+                { "key": "orderId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear devolución",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"reason\": \"Pantalla rota\",\n  \"status\": \"PENDING\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar devolución",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": 1,\n  \"reason\": \"Batería defectuosa\",\n  \"status\": \"APPROVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/returns/:returnId",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":returnId"],
+              "variable": [
+                { "key": "returnId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar devolución",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/returns/:returnId",
+              "host": ["{{baseUrl}}"],
+              "path": ["returns", ":returnId"],
+              "variable": [
+                { "key": "returnId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reembolsos",
+      "item": [
+        {
+          "name": "Obtener reembolso por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/refunds/:refundId",
+              "host": ["{{baseUrl}}"],
+              "path": ["refunds", ":refundId"],
+              "variable": [
+                { "key": "refundId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar reembolsos por devolución",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/refunds/return/:returnId",
+              "host": ["{{baseUrl}}"],
+              "path": ["refunds", "return", ":returnId"],
+              "variable": [
+                { "key": "returnId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear reembolso",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"returnId\": 1,\n  \"amount\": 899.99,\n  \"currency\": \"ARS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/refunds",
+              "host": ["{{baseUrl}}"],
+              "path": ["refunds"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar estado de reembolso",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PROCESSED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/refunds/:refundId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["refunds", ":refundId", "status"],
+              "variable": [
+                { "key": "refundId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Soporte — Tickets y Mensajes",
+      "item": [
+        {
+          "name": "Listar tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ticket por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets/:ticketId",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets", ":ticketId"],
+              "variable": [
+                { "key": "ticketId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"subject\": \"Mi celular llegó dañado\",\n  \"status\": \"OPEN\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar estado de ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CLOSED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets/:ticketId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets", ":ticketId", "status"],
+              "variable": [
+                { "key": "ticketId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar mensajes de un ticket",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets/:ticketId/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets", ":ticketId", "messages"],
+              "variable": [
+                { "key": "ticketId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enviar mensaje a ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderId\": 1,\n  \"content\": \"Quiero saber el estado de mi devolución\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/support/tickets/:ticketId/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["support", "tickets", ":ticketId", "messages"],
+              "variable": [
+                { "key": "ticketId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Listar todas las notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            }
+          }
+        },
+        {
+          "name": "Listar notificaciones no leídas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread"]
+            }
+          }
+        },
+        {
+          "name": "Marcar notificación como leída",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:notificationId/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ":notificationId", "read"],
+              "variable": [
+                { "key": "notificationId", "value": "1" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

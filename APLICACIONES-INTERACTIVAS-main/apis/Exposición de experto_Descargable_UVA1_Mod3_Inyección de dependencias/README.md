@@ -119,21 +119,89 @@ El archivo `src/test/resources/application.properties` configura H2 automaticame
 
 ---
 
+## Colección Postman
+
+Importar `postman_collection.json` (raíz del proyecto) en Postman para tener todos los endpoints listos con ejemplos de request body.
+
+1. Postman → **Import** → seleccionar `postman_collection.json`
+2. La variable `{{baseUrl}}` ya está configurada como `http://localhost:8080`. Se puede cambiar desde **Environments** o directamente en la colección sin tocar los requests.
+
+---
+
 ## Endpoints disponibles
 
-La app corre en `http://localhost:8080`. Ver `test-endpoints.http` para ejemplos de todos los endpoints o importar `insomnia-collection.json` en Insomnia.
+La app corre en `http://localhost:8080`.
 
-| Recurso | Ruta |
-|---------|------|
-| Usuarios | `POST /users` |
-| Categorias | `POST /categories` |
-| Depositos | `POST /warehouses` |
-| Direcciones | `POST /addresses` |
-| Productos | `POST /products` |
-| Variantes | `POST /variants` |
-| Inventario | `POST /inventory` |
-| Pedidos | `POST /orders` |
-| Pagos | `POST /payments` |
-| Entregas | `POST /deliveries` |
-| Devoluciones | `POST /returns` |
-| Resenas | `POST /reviews` |
+### Módulos base
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/users` | Crear usuario |
+| `POST` | `/categories` | Crear categoría |
+| `POST` | `/warehouses` | Crear depósito |
+| `POST` | `/addresses` | Crear dirección |
+| `POST` | `/products` | Crear producto |
+| `POST` | `/variants` | Crear variante |
+| `POST` | `/inventory` | Registrar inventario |
+| `POST` | `/orders` | Crear pedido |
+| `POST` | `/payments` | Registrar pago |
+| `POST` | `/reviews` | Crear reseña |
+
+### Entregas
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/deliveries` | Listar todas las entregas |
+| `GET` | `/deliveries/{id}` | Obtener entrega por ID |
+| `GET` | `/deliveries/order/{orderId}` | Listar entregas de un pedido |
+| `POST` | `/deliveries` | Crear entrega |
+| `PUT` | `/deliveries/{id}` | Actualizar entrega |
+| `DELETE` | `/deliveries/{id}` | Eliminar entrega |
+
+### Seguimiento de envío
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/tracking/{id}` | Obtener checkpoint por ID |
+| `GET` | `/tracking/delivery/{deliveryId}` | Listar checkpoints de una entrega |
+| `POST` | `/tracking` | Agregar checkpoint |
+| `PUT` | `/tracking/{id}/status` | Actualizar estado del checkpoint |
+
+### Devoluciones
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/returns` | Listar todas las devoluciones |
+| `GET` | `/returns/{id}` | Obtener devolución por ID |
+| `GET` | `/returns/order/{orderId}` | Listar devoluciones de un pedido |
+| `POST` | `/returns` | Crear devolución |
+| `PUT` | `/returns/{id}` | Actualizar devolución |
+| `DELETE` | `/returns/{id}` | Eliminar devolución |
+
+### Reembolsos
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/refunds/{id}` | Obtener reembolso por ID |
+| `GET` | `/refunds/return/{returnId}` | Listar reembolsos de una devolución |
+| `POST` | `/refunds` | Crear reembolso |
+| `PUT` | `/refunds/{id}/status` | Actualizar estado del reembolso |
+
+### Soporte — Tickets y Mensajes
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/support/tickets` | Listar todos los tickets |
+| `GET` | `/support/tickets/{id}` | Obtener ticket por ID |
+| `POST` | `/support/tickets` | Crear ticket |
+| `PUT` | `/support/tickets/{id}/status` | Actualizar estado del ticket |
+| `GET` | `/support/tickets/{id}/messages` | Listar mensajes de un ticket |
+| `POST` | `/support/tickets/{id}/messages` | Enviar mensaje a un ticket |
+
+### Notificaciones
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/notifications` | Listar todas las notificaciones |
+| `GET` | `/notifications/unread` | Listar notificaciones no leídas |
+| `PUT` | `/notifications/{id}/read` | Marcar notificación como leída |
