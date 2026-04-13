@@ -34,7 +34,7 @@ public class ShipmentTracking {
     @JoinColumn(name = "delivery_id", nullable = false)
     private Delivery delivery;
 
-    @Column(name = "checkpoint")
+    @Column(name = "tracking_checkpoint")
     private String checkpoint;
 
     @Column(name = "status")
