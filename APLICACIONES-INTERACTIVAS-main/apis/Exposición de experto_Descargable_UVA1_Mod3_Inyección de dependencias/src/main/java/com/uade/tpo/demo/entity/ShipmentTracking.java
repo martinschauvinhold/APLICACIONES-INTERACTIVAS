@@ -4,6 +4,8 @@ import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,8 +39,9 @@ public class ShipmentTracking {
     @Column(name = "tracking_checkpoint")
     private String checkpoint;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private TrackingStatus status;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "recorded_at")
