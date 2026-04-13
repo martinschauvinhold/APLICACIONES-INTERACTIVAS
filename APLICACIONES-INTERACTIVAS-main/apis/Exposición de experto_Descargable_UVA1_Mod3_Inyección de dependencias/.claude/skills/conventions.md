@@ -4,6 +4,25 @@ Archivo de referencia compartido. Todas las skills de este proyecto lo usan como
 
 ---
 
+## Idioma del código
+
+Todo el código debe estar en **inglés**: clases, métodos, variables, parámetros, campos, interfaces.
+
+```java
+// MAL
+boolean tieneDeliveryDespachado = ...
+public List<Delivery> obtenerPorOrden(Integer orderId) { ... }
+
+// BIEN
+boolean hasDispatchedDelivery = ...
+public List<Delivery> getByOrderId(Integer orderId) { ... }
+```
+
+Excepción permitida: mensajes de error en strings (los que ve el usuario final pueden ir en español).
+En tests, los nombres de los métodos `@Test` pueden ir en español (`deberiaRetornar404_cuandoIdNoExiste`), pero las clases y variables de test en inglés.
+
+---
+
 ## Estructura de paquetes
 
 ```
@@ -45,6 +64,67 @@ Reglas:
 - Siempre definir `@Column(name = ...)` explícitamente — evita conflictos con palabras reservadas de SQL Server
 - `@Builder` + `@NoArgsConstructor` + `@AllArgsConstructor` siempre juntos
 - IDs como `Integer` (no `int`) para poder recibir `null`
+
+---
+
+## Enums para campos de estado
+
+Cualquier campo que represente un estado, tipo o modo **debe ser un enum**, nunca un `String`.
+
+### Definición del enum
+
+```java
+// src/main/java/com/uade/tpo/demo/entity/NombreStatus.java
+public enum NombreStatus {
+    PENDING,
+    ACTIVE,
+    CLOSED
+}
+```
+
+Reglas:
+- Definir el enum en el paquete `entity/` (mismo nivel que las entidades)
+- Valores en `UPPER_SNAKE_CASE`
+- Nombre del enum: `<Entidad>Status` o `<Entidad>Type` según corresponda
+
+### En la entidad JPA
+
+```java
+@Enumerated(EnumType.STRING)   // ← obligatorio — guarda el nombre del enum, no el ordinal
+@Column(name = "status", nullable = false)
+private NombreStatus status;
+```
+
+Nunca usar `EnumType.ORDINAL` — si se reordena el enum, los datos históricos quedan inconsistentes.
+
+### En el DTO record
+
+```java
+public record NombreRequest(
+    @NotNull NombreStatus status,   // ← tipo enum, no String
+    ...
+) {}
+```
+
+### En el service
+
+```java
+// Comparar con == / !=, nunca con .equals() de String
+if (entity.getStatus() != NombreStatus.APPROVED) {
+    throw new BusinessRuleException("...");
+}
+entity.setStatus(NombreStatus.CLOSED);
+```
+
+### Enums existentes en el proyecto
+
+| Enum | Valores |
+|------|---------|
+| `DeliveryStatus` | `PENDING, DISPATCHED, DELIVERED, RETURNED` |
+| `ReturnStatus` | `PENDING, APPROVED, REJECTED, COMPLETED` |
+| `RefundStatus` | `PENDING, PROCESSED, FAILED` |
+| `TrackingStatus` | `IN_TRANSIT, DELAYED, DELIVERED, RETURNED` |
+| `TicketStatus` | `OPEN, PENDING, CLOSED` |
 
 ---
 

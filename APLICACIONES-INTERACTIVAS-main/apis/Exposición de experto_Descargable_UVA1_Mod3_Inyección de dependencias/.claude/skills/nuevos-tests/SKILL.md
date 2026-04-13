@@ -184,6 +184,21 @@ void create_deberiaRetornar400_cuandoBodyInvalido() throws Exception {
 
 ---
 
+## Datos de prueba — contexto del negocio
+
+Este e-commerce vende **productos tecnológicos** (celulares, tablets, accesorios). Los datos de prueba deben ser coherentes con ese contexto.
+
+| Campo | Ejemplos correctos | Ejemplos incorrectos |
+|-------|--------------------|----------------------|
+| `reason` (devolución) | `"Pantalla rota"`, `"Batería defectuosa"`, `"Dispositivo no enciende"`, `"Cámara con falla"` | `"Talle incorrecto"`, `"Color equivocado"` |
+| `subject` (ticket) | `"No funciona el pago"`, `"Quiero cancelar mi pedido"`, `"Mi celular llegó dañado"` | cualquier cosa de ropa o alimentos |
+| `shippingMethod` | `"correo express"`, `"moto mensajero"`, `"retiro en sucursal"` | referencias a otros rubros |
+| `checkpoint` (tracking) | `"En depósito"`, `"En camino"`, `"Entregado"` | — (son genéricos, están bien) |
+
+Usar datos específicos y realistas — evitar strings genéricos como `"campo"`, `"valor"`, `"test"` cuando el contexto permite algo más descriptivo.
+
+---
+
 ## Reglas generales
 
 - Nombre de método: `metodo_deberiaResultado_cuandoCondicion`
