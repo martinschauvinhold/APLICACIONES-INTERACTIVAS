@@ -107,6 +107,18 @@ En IntelliJ: `Database` > `+` > `Data Source` > `Microsoft SQL Server` > complet
 
 ---
 
+## Tests
+
+Los tests corren con H2 (base de datos en memoria) y no requieren ninguna DB externa. Funcionan en cualquier maquina sin configuracion adicional.
+
+```bash
+./mvnw test
+```
+
+El archivo `src/test/resources/application.properties` configura H2 automaticamente para el scope de test. No afecta el perfil de desarrollo ni produccion.
+
+---
+
 ## Endpoints disponibles
 
 La app corre en `http://localhost:8080`. Ver `test-endpoints.http` para ejemplos de todos los endpoints o importar `insomnia-collection.json` en Insomnia.
