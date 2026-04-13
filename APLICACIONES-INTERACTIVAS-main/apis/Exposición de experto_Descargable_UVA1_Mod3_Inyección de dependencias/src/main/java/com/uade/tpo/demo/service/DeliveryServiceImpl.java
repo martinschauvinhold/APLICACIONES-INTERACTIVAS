@@ -1,61 +1,74 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.uade.tpo.demo.entity.Delivery;
-import com.uade.tpo.demo.entity.Order;
+import com.uade.tpo.demo.entity.DeliveryStatus;
 import com.uade.tpo.demo.entity.dto.DeliveryRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class DeliveryServiceImpl implements DeliveryService {
 
-    @Autowired
-    private DeliveryRepository deliveryRepository;
+    private final DeliveryRepository deliveryRepository;
+    private final OrderRepository orderRepository;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    public ArrayList<Delivery> getDeliveries() {
-        return new ArrayList<>(deliveryRepository.findAll());
+    @Override
+    public List<Delivery> getDeliveries() {
+        return deliveryRepository.findAll();
     }
 
-    public Optional<Delivery> getDeliveryById(int deliveryId) {
-        return deliveryRepository.findById(deliveryId);
+    @Override
+    public Delivery getDeliveryById(Integer deliveryId) {
+        return deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new NotFoundException("Delivery", deliveryId));
     }
 
-    public List<Delivery> getDeliveriesByOrder(int orderId) {
+    @Override
+    public List<Delivery> getDeliveriesByOrder(Integer orderId) {
         return deliveryRepository.findByOrderId(orderId);
     }
 
-    public Delivery createDelivery(DeliveryRequest deliveryRequest) {
-        Order order = orderRepository.findById(deliveryRequest.getOrderId()).get();
-        Delivery delivery = Delivery.builder()
+    @Override
+    @Transactional
+    public Delivery createDelivery(DeliveryRequest request) {
+        var order = orderRepository.findById(request.orderId())
+                .orElseThrow(() -> new NotFoundException("Order", request.orderId()));
+        var delivery = Delivery.builder()
                 .order(order)
-                .shippingMethod(deliveryRequest.getShippingMethod())
-                .trackingNumber(deliveryRequest.getTrackingNumber())
-                .deliveryStatus(deliveryRequest.getDeliveryStatus())
+                .shippingMethod(request.shippingMethod())
+                .trackingNumber(request.trackingNumber())
+                .status(request.status() != null ? request.status() : DeliveryStatus.PENDING)
                 .dispatchedAt(new Date())
                 .build();
         return deliveryRepository.save(delivery);
     }
 
-    public Delivery updateDelivery(int deliveryId, DeliveryRequest deliveryRequest) {
-        Delivery delivery = deliveryRepository.findById(deliveryId).get();
-        delivery.setShippingMethod(deliveryRequest.getShippingMethod());
-        delivery.setTrackingNumber(deliveryRequest.getTrackingNumber());
-        delivery.setDeliveryStatus(deliveryRequest.getDeliveryStatus());
+    @Override
+    @Transactional
+    public Delivery updateDelivery(Integer deliveryId, DeliveryRequest request) {
+        var delivery = deliveryRepository.findById(deliveryId)
+                .orElseThrow(() -> new NotFoundException("Delivery", deliveryId));
+        delivery.setShippingMethod(request.shippingMethod());
+        delivery.setTrackingNumber(request.trackingNumber());
+        delivery.setStatus(request.status());
         return deliveryRepository.save(delivery);
     }
 
-    public void deleteDelivery(int deliveryId) {
+    @Override
+    @Transactional
+    public void deleteDelivery(Integer deliveryId) {
+        if (!deliveryRepository.existsById(deliveryId))
+            throw new NotFoundException("Delivery", deliveryId);
         deliveryRepository.deleteById(deliveryId);
     }
 }
