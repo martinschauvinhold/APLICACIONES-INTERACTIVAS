@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.UserRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @Service
@@ -40,7 +41,8 @@ public class UserServiceImpl implements UserService {
     }
 
     public User updateUser(int userId, UserRequest userRequest) {
-        User user = userRepository.findById(userId).get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User", userId));
         user.setUsername(userRequest.getUsername());
         user.setEmail(userRequest.getEmail());
         user.setPasswordHash(userRequest.getPasswordHash());

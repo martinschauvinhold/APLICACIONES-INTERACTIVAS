@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +45,8 @@ public class AddressServiceImpl implements AddressService {
             throw new DuplicateException("Address", "userId + street + city + zipCode",
                     addressRequest.getUserId() + " / " + addressRequest.getStreet());
         }
-        User user = userRepository.findById(addressRequest.getUserId()).get();
+        User user = userRepository.findById(addressRequest.getUserId())
+                .orElseThrow(() -> new NotFoundException("User", addressRequest.getUserId()));
         Address address = Address.builder()
                 .user(user)
                 .street(addressRequest.getStreet())
@@ -57,7 +59,8 @@ public class AddressServiceImpl implements AddressService {
     }
 
     public Address updateAddress(int addressId, AddressRequest addressRequest) {
-        Address address = addressRepository.findById(addressId).get();
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new NotFoundException("Address", addressId));
         address.setStreet(addressRequest.getStreet());
         address.setCity(addressRequest.getCity());
         address.setState(addressRequest.getState());

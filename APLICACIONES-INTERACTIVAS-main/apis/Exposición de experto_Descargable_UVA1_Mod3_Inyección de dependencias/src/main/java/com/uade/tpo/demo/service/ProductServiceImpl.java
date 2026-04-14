@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
 
@@ -31,7 +32,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     public Product createProduct(ProductRequest productRequest) {
-        Category category = categoryRepository.findById(productRequest.getCategoryId()).get();
+        Category category = categoryRepository.findById(productRequest.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category", productRequest.getCategoryId()));
         Product product = Product.builder()
                 .name(productRequest.getName())
                 .description(productRequest.getDescription())
@@ -44,8 +46,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     public Product updateProduct(int productId, ProductRequest productRequest) {
-        Product product = productRepository.findById(productId).get();
-        Category category = categoryRepository.findById(productRequest.getCategoryId()).get();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product", productId));
+        Category category = categoryRepository.findById(productRequest.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category", productRequest.getCategoryId()));
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
         product.setBrand(productRequest.getBrand());

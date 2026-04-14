@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
  
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.exceptions.CategoryDuplicateException;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
  
 @Service
@@ -31,7 +32,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
  
     public Category updateCategory(int categoryId, String description) {
-        Category category = categoryRepository.findById(categoryId).get();
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category", categoryId));
         category.setDescription(description);
         return categoryRepository.save(category);
     }

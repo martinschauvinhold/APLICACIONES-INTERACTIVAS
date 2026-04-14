@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Address;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.OrderRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.AddressRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.UserRepository;
@@ -42,9 +43,9 @@ public class OrderServiceImpl implements OrderService {
 
     public Order createOrder(OrderRequest orderRequest) {
         User user = userRepository.findById(orderRequest.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found: " + orderRequest.getUserId()));
+                .orElseThrow(() -> new NotFoundException("User", orderRequest.getUserId()));
         Address address = addressRepository.findById(orderRequest.getShippingAddressId())
-                .orElseThrow(() -> new RuntimeException("Address not found: " + orderRequest.getShippingAddressId()));
+                .orElseThrow(() -> new NotFoundException("Address", orderRequest.getShippingAddressId()));
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(address)
@@ -56,7 +57,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     public Order updateOrder(int orderId, OrderRequest orderRequest) {
-        Order order = orderRepository.findById(orderId).get();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
         order.setStatus(orderRequest.getStatus());
         order.setUpdatedAt(new Date());
         return orderRepository.save(order);
