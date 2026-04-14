@@ -1,11 +1,13 @@
 package com.uade.tpo.demo.entity.dto;
 
-import lombok.Data;
+import com.uade.tpo.demo.entity.DeliveryStatus;
 
-@Data
-public class DeliveryRequest {
-    private int orderId;
-    private String shippingMethod;
-    private String trackingNumber;
-    private String deliveryStatus;
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record DeliveryRequest(
+        @NotNull Integer orderId,
+        @NotBlank String shippingMethod,
+        @NotBlank String trackingNumber,
+        DeliveryStatus status
+) {}

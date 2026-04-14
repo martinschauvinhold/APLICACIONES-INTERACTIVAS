@@ -10,4 +10,6 @@ import com.uade.tpo.demo.entity.Notification;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     List<Notification> findByUserId(int userId);
+
+    List<Notification> findByIsRead(boolean isRead);
 }

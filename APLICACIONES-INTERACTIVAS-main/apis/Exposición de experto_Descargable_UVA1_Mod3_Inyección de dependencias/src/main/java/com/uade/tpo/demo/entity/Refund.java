@@ -5,6 +5,8 @@ import java.util.Date;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,8 +44,9 @@ public class Refund {
     @Column(name = "currency")
     private String currency = "ARS";
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private RefundStatus status;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "processed_at")

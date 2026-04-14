@@ -1,22 +1,20 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.uade.tpo.demo.entity.Delivery;
 import com.uade.tpo.demo.entity.dto.DeliveryRequest;
 
 public interface DeliveryService {
-    public ArrayList<Delivery> getDeliveries();
+    List<Delivery> getDeliveries();
 
-    public Optional<Delivery> getDeliveryById(int deliveryId);
+    Delivery getDeliveryById(Integer deliveryId);
 
-    public List<Delivery> getDeliveriesByOrder(int orderId);
+    List<Delivery> getDeliveriesByOrder(Integer orderId);
 
-    public Delivery createDelivery(DeliveryRequest deliveryRequest);
+    Delivery createDelivery(DeliveryRequest request);
 
-    public Delivery updateDelivery(int deliveryId, DeliveryRequest deliveryRequest);
+    Delivery updateDelivery(Integer deliveryId, DeliveryRequest request);
 
-    public void deleteDelivery(int deliveryId);
+    void deleteDelivery(Integer deliveryId);
 }

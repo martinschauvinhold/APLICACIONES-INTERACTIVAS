@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.uade.tpo.demo.entity.Address;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.AddressRequest;
+import com.uade.tpo.demo.exceptions.DuplicateException;
 import com.uade.tpo.demo.repository.AddressRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
@@ -35,6 +36,14 @@ public class AddressServiceImpl implements AddressService {
     }
 
     public Address createAddress(AddressRequest addressRequest) {
+        if (addressRepository.existsByUserIdAndStreetAndCityAndZipCode(
+                addressRequest.getUserId(),
+                addressRequest.getStreet(),
+                addressRequest.getCity(),
+                addressRequest.getZipCode())) {
+            throw new DuplicateException("Address", "userId + street + city + zipCode",
+                    addressRequest.getUserId() + " / " + addressRequest.getStreet());
+        }
         User user = userRepository.findById(addressRequest.getUserId()).get();
         Address address = Address.builder()
                 .user(user)

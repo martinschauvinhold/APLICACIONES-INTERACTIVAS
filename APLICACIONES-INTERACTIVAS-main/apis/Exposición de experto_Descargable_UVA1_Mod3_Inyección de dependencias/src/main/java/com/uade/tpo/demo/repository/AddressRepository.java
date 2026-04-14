@@ -10,4 +10,6 @@ import com.uade.tpo.demo.entity.Address;
 @Repository
 public interface AddressRepository extends JpaRepository<Address, Integer> {
     List<Address> findByUserId(int userId);
+
+    boolean existsByUserIdAndStreetAndCityAndZipCode(int userId, String street, String city, String zipCode);
 }
