@@ -1,59 +1,85 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.uade.tpo.demo.entity.Order;
+import com.uade.tpo.demo.entity.DeliveryStatus;
 import com.uade.tpo.demo.entity.ProductReturn;
+import com.uade.tpo.demo.entity.ReturnStatus;
 import com.uade.tpo.demo.entity.dto.ProductReturnRequest;
+import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.ProductReturnRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ProductReturnServiceImpl implements ProductReturnService {
 
-    @Autowired
-    private ProductReturnRepository productReturnRepository;
+    private final ProductReturnRepository returnRepository;
+    private final OrderRepository orderRepository;
+    private final DeliveryRepository deliveryRepository;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    public ArrayList<ProductReturn> getReturns() {
-        return new ArrayList<>(productReturnRepository.findAll());
+    @Override
+    public List<ProductReturn> getReturns() {
+        return returnRepository.findAll();
     }
 
-    public Optional<ProductReturn> getReturnById(int returnId) {
-        return productReturnRepository.findById(returnId);
+    @Override
+    public ProductReturn getReturnById(Integer returnId) {
+        return returnRepository.findById(returnId)
+                .orElseThrow(() -> new NotFoundException("ProductReturn", returnId));
     }
 
-    public List<ProductReturn> getReturnsByOrder(int orderId) {
-        return productReturnRepository.findByOrderId(orderId);
+    @Override
+    public List<ProductReturn> getReturnsByOrder(Integer orderId) {
+        return returnRepository.findByOrderId(orderId);
     }
 
-    public ProductReturn createReturn(ProductReturnRequest returnRequest) {
-        Order order = orderRepository.findById(returnRequest.getOrderId()).get();
-        ProductReturn productReturn = ProductReturn.builder()
+    @Override
+    @Transactional
+    public ProductReturn createReturn(ProductReturnRequest request) {
+        var order = orderRepository.findById(request.orderId())
+                .orElseThrow(() -> new NotFoundException("Order", request.orderId()));
+
+        boolean hasDispatchedDelivery = deliveryRepository.findByOrderId(request.orderId())
+                .stream()
+                .anyMatch(d -> d.getStatus() != DeliveryStatus.PENDING);
+
+        if (!hasDispatchedDelivery)
+            throw new BusinessRuleException(
+                    "Cannot create a return: the order has no dispatched delivery");
+
+        var productReturn = ProductReturn.builder()
                 .order(order)
-                .reason(returnRequest.getReason())
-                .status(returnRequest.getStatus())
+                .reason(request.reason())
+                .status(request.status() != null ? request.status() : ReturnStatus.PENDING)
                 .requestedAt(new Date())
                 .build();
-        return productReturnRepository.save(productReturn);
+        return returnRepository.save(productReturn);
     }
 
-    public ProductReturn updateReturn(int returnId, ProductReturnRequest returnRequest) {
-        ProductReturn productReturn = productReturnRepository.findById(returnId).get();
-        productReturn.setReason(returnRequest.getReason());
-        productReturn.setStatus(returnRequest.getStatus());
-        return productReturnRepository.save(productReturn);
+    @Override
+    @Transactional
+    public ProductReturn updateReturn(Integer returnId, ProductReturnRequest request) {
+        var productReturn = returnRepository.findById(returnId)
+                .orElseThrow(() -> new NotFoundException("ProductReturn", returnId));
+        productReturn.setReason(request.reason());
+        productReturn.setStatus(request.status());
+        return returnRepository.save(productReturn);
     }
 
-    public void deleteReturn(int returnId) {
-        productReturnRepository.deleteById(returnId);
+    @Override
+    @Transactional
+    public void deleteReturn(Integer returnId) {
+        if (!returnRepository.existsById(returnId))
+            throw new NotFoundException("ProductReturn", returnId);
+        returnRepository.deleteById(returnId);
     }
 }

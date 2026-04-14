@@ -1,11 +1,8 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,54 +17,46 @@ import com.uade.tpo.demo.entity.Delivery;
 import com.uade.tpo.demo.entity.dto.DeliveryRequest;
 import com.uade.tpo.demo.service.DeliveryService;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("deliveries")
+@RequiredArgsConstructor
 public class DeliveriesController {
 
-    @Autowired
-    private DeliveryService deliveryService;
+    private final DeliveryService deliveryService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<Delivery>> getDeliveries() {
+    public ResponseEntity<List<Delivery>> getDeliveries() {
         return ResponseEntity.ok(deliveryService.getDeliveries());
     }
 
     @GetMapping("/{deliveryId}")
-    public ResponseEntity<Delivery> getDeliveryById(@PathVariable int deliveryId) {
-        Optional<Delivery> result = deliveryService.getDeliveryById(deliveryId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Delivery> getDeliveryById(@PathVariable Integer deliveryId) {
+        return ResponseEntity.ok(deliveryService.getDeliveryById(deliveryId));
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<Delivery>> getDeliveriesByOrder(@PathVariable int orderId) {
+    public ResponseEntity<List<Delivery>> getDeliveriesByOrder(@PathVariable Integer orderId) {
         return ResponseEntity.ok(deliveryService.getDeliveriesByOrder(orderId));
     }
 
     @PostMapping
-    public ResponseEntity<Object> createDelivery(@RequestBody DeliveryRequest deliveryRequest) {
-        Delivery result = deliveryService.createDelivery(deliveryRequest);
-        return ResponseEntity.created(URI.create("/deliveries/" + result.getId())).body(result);
+    public ResponseEntity<Delivery> createDelivery(@Valid @RequestBody DeliveryRequest request) {
+        Delivery created = deliveryService.createDelivery(request);
+        return ResponseEntity.created(URI.create("/deliveries/" + created.getId())).body(created);
     }
 
     @PutMapping("/{deliveryId}")
-    public ResponseEntity<Object> updateDelivery(@PathVariable int deliveryId, @RequestBody DeliveryRequest deliveryRequest) {
-        Optional<Delivery> result = deliveryService.getDeliveryById(deliveryId);
-        if (result.isPresent()) {
-            Delivery updated = deliveryService.updateDelivery(deliveryId, deliveryRequest);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Delivery> updateDelivery(@PathVariable Integer deliveryId,
+                                                    @Valid @RequestBody DeliveryRequest request) {
+        return ResponseEntity.ok(deliveryService.updateDelivery(deliveryId, request));
     }
 
     @DeleteMapping("/{deliveryId}")
-    public ResponseEntity<Object> deleteDelivery(@PathVariable int deliveryId) {
-        Optional<Delivery> result = deliveryService.getDeliveryById(deliveryId);
-        if (result.isPresent()) {
-            deliveryService.deleteDelivery(deliveryId);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteDelivery(@PathVariable Integer deliveryId) {
+        deliveryService.deleteDelivery(deliveryId);
+        return ResponseEntity.noContent().build();
     }
 }

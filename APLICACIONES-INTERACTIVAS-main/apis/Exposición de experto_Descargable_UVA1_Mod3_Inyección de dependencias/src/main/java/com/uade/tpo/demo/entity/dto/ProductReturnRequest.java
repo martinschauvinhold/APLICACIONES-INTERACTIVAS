@@ -1,10 +1,12 @@
 package com.uade.tpo.demo.entity.dto;
 
-import lombok.Data;
+import com.uade.tpo.demo.entity.ReturnStatus;
 
-@Data
-public class ProductReturnRequest {
-    private int orderId;
-    private String reason;
-    private String status;
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+public record ProductReturnRequest(
+        @NotNull Integer orderId,
+        @NotBlank String reason,
+        ReturnStatus status
+) {}
