@@ -1,0 +1,409 @@
+### E-Commerce API - POST Endpoints Test Suite
+### Usar con la extensión REST Client de VS Code
+### Orden recomendado: ejecutar de arriba hacia abajo (respeta dependencias entre entidades)
+
+@baseUrl = http://localhost:8080
+
+# ============================================================
+# 1. USUARIOS - Sin dependencias
+# ============================================================
+
+### Crear usuario cliente
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "juan.perez",
+  "email": "juan.perez@email.com",
+  "passwordHash": "hashed_password_123",
+  "firstName": "Juan",
+  "lastName": "Perez",
+  "role": "CUSTOMER",
+  "phone": "+5491155554444"
+}
+
+###
+
+### Crear usuario admin
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "admin.garcia",
+  "email": "admin@tienda.com",
+  "passwordHash": "admin_hashed_456",
+  "firstName": "Carlos",
+  "lastName": "Garcia",
+  "role": "ADMIN",
+  "phone": "+5491166667777"
+}
+
+###
+
+# ============================================================
+# 2. DEPOSITOS - Sin dependencias
+# ============================================================
+
+### Crear depósito principal
+POST {{baseUrl}}/warehouses
+Content-Type: application/json
+
+{
+  "name": "Deposito Central Buenos Aires",
+  "location": "Av. Lugones 1234, CABA",
+  "contactPhone": "+5491100001111"
+}
+
+###
+
+### Crear depósito secundario
+POST {{baseUrl}}/warehouses
+Content-Type: application/json
+
+{
+  "name": "Deposito Zona Sur",
+  "location": "Calle Falsa 742, Lomas de Zamora",
+  "contactPhone": "+5491122223333"
+}
+
+###
+
+# ============================================================
+# 3. CATEGORIAS - Sin dependencias
+# ============================================================
+
+### Crear categoría Electrónica
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "description": "Electrónica y tecnología"
+}
+
+###
+
+### Crear categoría Ropa
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "description": "Indumentaria y accesorios"
+}
+
+###
+
+### Crear categoría Hogar
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "description": "Artículos para el hogar"
+}
+
+###
+
+# ============================================================
+# 4. DIRECCIONES - Requiere: userId existente (ej: 1)
+# ============================================================
+
+### Crear dirección para usuario 1
+POST {{baseUrl}}/addresses
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "street": "Av. Corrientes 1500",
+  "city": "Buenos Aires",
+  "state": "CABA",
+  "zipCode": "1043",
+  "referenceNote": "Piso 3, depto B. Timbre apellido Perez"
+}
+
+###
+
+### Crear segunda dirección para usuario 1
+POST {{baseUrl}}/addresses
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "street": "Calle Rivadavia 800",
+  "city": "Córdoba",
+  "state": "Córdoba",
+  "zipCode": "5000",
+  "referenceNote": "Casa con portón verde"
+}
+
+###
+
+# ============================================================
+# 5. PRODUCTOS - Requiere: categoryId existente (ej: 1)
+# ============================================================
+
+### Crear producto: Notebook
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Notebook Lenovo IdeaPad 15",
+  "description": "Notebook 15.6\" Intel Core i5, 16GB RAM, 512GB SSD",
+  "brand": "Lenovo",
+  "categoryId": 1
+}
+
+###
+
+### Crear producto: Smartphone
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Samsung Galaxy A54",
+  "description": "Smartphone 6.4\" AMOLED, 128GB, cámara triple",
+  "brand": "Samsung",
+  "categoryId": 1
+}
+
+###
+
+### Crear producto: Remera
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Remera Algodón Premium",
+  "description": "Remera 100% algodón, corte recto",
+  "brand": "BasicWear",
+  "categoryId": 2
+}
+
+###
+
+# ============================================================
+# 6. VARIANTES DE PRODUCTO - Requiere: productId existente (ej: 1)
+# ============================================================
+
+### Crear variante de notebook (color negro)
+POST {{baseUrl}}/variants
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "sku": "LENOVO-IDEAPAD15-BLK",
+  "attributes": "{\"color\": \"Negro\", \"ram\": \"16GB\", \"storage\": \"512GB\"}",
+  "basePrice": 850000.00
+}
+
+###
+
+### Crear variante de notebook (color gris)
+POST {{baseUrl}}/variants
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "sku": "LENOVO-IDEAPAD15-GRY",
+  "attributes": "{\"color\": \"Gris\", \"ram\": \"16GB\", \"storage\": \"512GB\"}",
+  "basePrice": 850000.00
+}
+
+###
+
+### Crear variante de remera (talle M, rojo)
+POST {{baseUrl}}/variants
+Content-Type: application/json
+
+{
+  "productId": 3,
+  "sku": "BASICWEAR-REMERA-M-RED",
+  "attributes": "{\"talle\": \"M\", \"color\": \"Rojo\"}",
+  "basePrice": 12500.00
+}
+
+###
+
+# ============================================================
+# 7. INVENTARIO - Requiere: variantId y warehouseId existentes
+# ============================================================
+
+### Cargar stock: variante 1 en depósito 1
+POST {{baseUrl}}/inventory
+Content-Type: application/json
+
+{
+  "variantId": 1,
+  "warehouseId": 1,
+  "stockQuantity": 50
+}
+
+###
+
+### Cargar stock: variante 2 en depósito 2
+POST {{baseUrl}}/inventory
+Content-Type: application/json
+
+{
+  "variantId": 2,
+  "warehouseId": 2,
+  "stockQuantity": 30
+}
+
+###
+
+### Cargar stock: variante 3 (remera) en depósito 1
+POST {{baseUrl}}/inventory
+Content-Type: application/json
+
+{
+  "variantId": 3,
+  "warehouseId": 1,
+  "stockQuantity": 200
+}
+
+###
+
+# ============================================================
+# 8. PEDIDOS - Requiere: userId y shippingAddressId existentes
+# ============================================================
+
+### Crear pedido para usuario 1
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "shippingAddressId": 1,
+  "status": "PENDING"
+}
+
+###
+
+### Crear pedido confirmado para usuario 1
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "shippingAddressId": 2,
+  "status": "CONFIRMED"
+}
+
+###
+
+# ============================================================
+# 9. PAGOS - Requiere: orderId existente (ej: 1)
+# ============================================================
+
+### Registrar pago con tarjeta de crédito
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "paymentMethod": "CREDIT_CARD",
+  "transactionId": "TXN-CC-20240410-001",
+  "paymentStatus": "APPROVED"
+}
+
+###
+
+### Registrar pago con transferencia bancaria
+POST {{baseUrl}}/payments
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "paymentMethod": "BANK_TRANSFER",
+  "transactionId": "TXN-BT-20240410-002",
+  "paymentStatus": "PENDING"
+}
+
+###
+
+# ============================================================
+# 10. ENTREGAS - Requiere: orderId existente (ej: 1)
+# ============================================================
+
+### Registrar entrega con envío estándar
+POST {{baseUrl}}/deliveries
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "shippingMethod": "STANDARD",
+  "trackingNumber": "AR123456789",
+  "deliveryStatus": "DISPATCHED"
+}
+
+###
+
+### Registrar entrega con envío express
+POST {{baseUrl}}/deliveries
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "shippingMethod": "EXPRESS",
+  "trackingNumber": "AR987654321",
+  "deliveryStatus": "IN_TRANSIT"
+}
+
+###
+
+# ============================================================
+# 11. DEVOLUCIONES - Requiere: orderId existente (ej: 1)
+# ============================================================
+
+### Registrar devolución por producto defectuoso
+POST {{baseUrl}}/returns
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "reason": "Producto llegó con pantalla rota",
+  "status": "PENDING"
+}
+
+###
+
+### Registrar devolución por error en el pedido
+POST {{baseUrl}}/returns
+Content-Type: application/json
+
+{
+  "orderId": 2,
+  "reason": "Recibí un color diferente al pedido",
+  "status": "APPROVED"
+}
+
+###
+
+# ============================================================
+# 12. RESEÑAS - Requiere: userId y productId existentes
+# ============================================================
+
+### Crear reseña positiva
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "productId": 1,
+  "rating": 5,
+  "comment": "Excelente notebook, muy rápida y buena batería. Llegó en perfecto estado."
+}
+
+###
+
+### Crear reseña neutral
+POST {{baseUrl}}/reviews
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "productId": 2,
+  "rating": 3,
+  "comment": "Producto correcto pero la entrega tardó más de lo esperado."
+}
+
+###

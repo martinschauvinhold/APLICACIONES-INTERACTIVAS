@@ -1,0 +1,107 @@
+-- ============================================
+-- SCRIPT DE LIMPIEZA DE TABLAS
+-- E-Commerce Database - SQL Server
+-- Elimina todos los datos respetando el orden
+-- de foreign keys. Los IDs se reinician desde 1.
+-- ============================================
+
+USE [E-commerce];
+GO
+
+-- Deshabilitar constraints temporalmente
+EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
+GO
+
+-- ============================================
+-- POSTVENTA
+-- ============================================
+DELETE FROM REFUNDS;
+DBCC CHECKIDENT ('REFUNDS', RESEED, 0);
+
+DELETE FROM RETURNS;
+DBCC CHECKIDENT ('RETURNS', RESEED, 0);
+
+-- ============================================
+-- PEDIDOS Y PAGOS
+-- ============================================
+DELETE FROM SHIPMENT_TRACKING;
+DBCC CHECKIDENT ('SHIPMENT_TRACKING', RESEED, 0);
+
+DELETE FROM DELIVERIES;
+DBCC CHECKIDENT ('DELIVERIES', RESEED, 0);
+
+DELETE FROM PAYMENTS;
+DBCC CHECKIDENT ('PAYMENTS', RESEED, 0);
+
+DELETE FROM ORDER_ITEMS;
+DBCC CHECKIDENT ('ORDER_ITEMS', RESEED, 0);
+
+DELETE FROM ORDERS;
+DBCC CHECKIDENT ('ORDERS', RESEED, 0);
+
+-- ============================================
+-- LOGÍSTICA
+-- ============================================
+DELETE FROM INVENTORY;
+DBCC CHECKIDENT ('INVENTORY', RESEED, 0);
+
+DELETE FROM WAREHOUSES;
+DBCC CHECKIDENT ('WAREHOUSES', RESEED, 0);
+
+-- ============================================
+-- CATÁLOGO
+-- ============================================
+DELETE FROM COUPONS;
+DBCC CHECKIDENT ('COUPONS', RESEED, 0);
+
+DELETE FROM DISCOUNTS;
+DBCC CHECKIDENT ('DISCOUNTS', RESEED, 0);
+
+DELETE FROM REVIEWS;
+DBCC CHECKIDENT ('REVIEWS', RESEED, 0);
+
+DELETE FROM TAGS;
+DBCC CHECKIDENT ('TAGS', RESEED, 0);
+
+DELETE FROM PRICE_TIERS;
+DBCC CHECKIDENT ('PRICE_TIERS', RESEED, 0);
+
+DELETE FROM PRODUCT_IMAGES;
+DBCC CHECKIDENT ('PRODUCT_IMAGES', RESEED, 0);
+
+DELETE FROM PRODUCT_VARIANTS;
+DBCC CHECKIDENT ('PRODUCT_VARIANTS', RESEED, 0);
+
+DELETE FROM PRODUCTS;
+DBCC CHECKIDENT ('PRODUCTS', RESEED, 0);
+
+DELETE FROM CATEGORIES;
+DBCC CHECKIDENT ('CATEGORIES', RESEED, 0);
+
+-- ============================================
+-- USUARIOS Y AUTENTICACIÓN
+-- ============================================
+DELETE FROM MESSAGES;
+DBCC CHECKIDENT ('MESSAGES', RESEED, 0);
+
+DELETE FROM SUPPORT_TICKETS;
+DBCC CHECKIDENT ('SUPPORT_TICKETS', RESEED, 0);
+
+DELETE FROM NOTIFICATIONS;
+DBCC CHECKIDENT ('NOTIFICATIONS', RESEED, 0);
+
+DELETE FROM SESSIONS;
+DBCC CHECKIDENT ('SESSIONS', RESEED, 0);
+
+DELETE FROM ADDRESSES;
+DBCC CHECKIDENT ('ADDRESSES', RESEED, 0);
+
+DELETE FROM USERS;
+DBCC CHECKIDENT ('USERS', RESEED, 0);
+
+-- Rehabilitar constraints
+EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';
+GO
+
+PRINT 'Limpieza completada. Todos los IDs reiniciados desde 1.';
+GO
