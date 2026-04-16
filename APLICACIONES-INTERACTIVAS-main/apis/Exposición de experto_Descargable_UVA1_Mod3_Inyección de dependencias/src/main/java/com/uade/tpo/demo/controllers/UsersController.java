@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import com.uade.tpo.demo.repository.UserRepository;
-import com.uade.tpo.demo.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.UserRequest;
 import com.uade.tpo.demo.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("users")
@@ -28,9 +27,6 @@ public class UsersController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private JwtService jwtService;
 
     @Autowired
     private UserRepository userRepository;
@@ -43,9 +39,7 @@ public class UsersController {
     @GetMapping("/{userId}")
     public ResponseEntity<User> getUserById(@PathVariable int userId) {
         Optional<User> result = userService.getUserById(userId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
@@ -75,13 +69,10 @@ public class UsersController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> getMe(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        String token = authHeader.substring(7);
-        String email = jwtService.extractEmail(token);
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isPresent())
-            return ResponseEntity.ok(user.get());
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<User> getMe() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
