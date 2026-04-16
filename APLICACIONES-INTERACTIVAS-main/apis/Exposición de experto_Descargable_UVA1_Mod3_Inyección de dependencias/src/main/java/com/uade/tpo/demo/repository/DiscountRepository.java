@@ -10,4 +10,8 @@ import com.uade.tpo.demo.entity.Discount;
 @Repository
 public interface DiscountRepository extends JpaRepository<Discount, Integer> {
     List<Discount> findByIsActive(boolean isActive);
+
+    List<Discount> findByProductIdAndIsActiveTrue(int productId);
+
+    List<Discount> findByCategoryIdAndIsActiveTrue(int categoryId);
 }
