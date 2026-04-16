@@ -1,3 +1,6 @@
+-include .env
+export
+
 PROFILE        = docker
 CONTAINER      = ecommerce-sqlserver
 SA_PASS        = YourStrong@Passw0rd

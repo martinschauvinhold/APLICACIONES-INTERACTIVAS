@@ -148,6 +148,17 @@ Importar `postman_collection.json` (raíz del proyecto) en Postman para tener to
 
 La app corre en `http://localhost:8080`.
 
+### Autenticación
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| `POST` | `/auth/register` | Registrar nuevo usuario (rol: buyer) | No |
+| `POST` | `/auth/login` | Iniciar sesión, devuelve JWT | No |
+| `POST` | `/auth/logout` | Cerrar sesión (invalida la sesión en DB) | Bearer token |
+| `GET` | `/users/me` | Obtener perfil del usuario autenticado | Bearer token |
+
+El token JWT se incluye en el header `Authorization: Bearer <token>`. Expira en 24 horas (configurable con `JWT_SECRET` y `jwt.expiration-ms`).
+
 ### Módulos base
 
 | Método | Ruta | Descripción |
