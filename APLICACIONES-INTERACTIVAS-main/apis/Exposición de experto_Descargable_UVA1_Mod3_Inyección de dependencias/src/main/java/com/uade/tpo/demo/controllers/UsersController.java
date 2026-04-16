@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import com.uade.tpo.demo.repository.UserRepository;
+import com.uade.tpo.demo.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.UserRequest;
 import com.uade.tpo.demo.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("users")
@@ -25,6 +28,12 @@ public class UsersController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<ArrayList<User>> getUsers() {
@@ -62,6 +71,17 @@ public class UsersController {
             userService.deleteUser(userId);
             return ResponseEntity.noContent().build();
         }
+        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getMe(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String token = authHeader.substring(7);
+        String email = jwtService.extractEmail(token);
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent())
+            return ResponseEntity.ok(user.get());
         return ResponseEntity.notFound().build();
     }
 }
