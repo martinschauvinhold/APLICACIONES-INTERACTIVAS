@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.service;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.PaymentRepository;
 
@@ -22,6 +22,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private PaymentProcessor paymentProcessor;
 
     public ArrayList<Payment> getPayments() {
         return new ArrayList<>(paymentRepository.findAll());
@@ -35,25 +38,33 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findByOrderId(orderId);
     }
 
+    // TODO: sera reescrito en PR 4 con logica de pago real, locking y descuento de stock
     public Payment createPayment(PaymentRequest paymentRequest) {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found: " + paymentRequest.getOrderId()));
+                .orElseThrow(() -> new NotFoundException("Order", paymentRequest.getOrderId()));
+
+        // Configurar simulacion de fallo si se pide
+        if (paymentProcessor instanceof SimulatedPaymentProcessor simulated) {
+            simulated.setSimulateFailure(paymentRequest.isSimulateFailure());
+        }
+
+        var result = paymentProcessor.process(order.getTotalAmount(), paymentRequest.getPaymentMethod());
+
         Payment payment = Payment.builder()
                 .order(order)
                 .paymentMethod(paymentRequest.getPaymentMethod())
-                .transactionId(paymentRequest.getTransactionId())
-                .paymentStatus(paymentRequest.getPaymentStatus())
-                .paidAt(new Date())
+                .transactionId(result.getTransactionId())
+                .paymentStatus(result.getStatus())
+                .paidAt(new java.util.Date())
                 .build();
+
         return paymentRepository.save(payment);
     }
 
     public Payment updatePayment(int paymentId, PaymentRequest paymentRequest) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+                .orElseThrow(() -> new NotFoundException("Payment", paymentId));
         payment.setPaymentMethod(paymentRequest.getPaymentMethod());
-        payment.setTransactionId(paymentRequest.getTransactionId());
-        payment.setPaymentStatus(paymentRequest.getPaymentStatus());
         return paymentRepository.save(payment);
     }
 

@@ -38,19 +38,16 @@ public class OrderItemsController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping
-    public ResponseEntity<Object> addItem(@RequestBody OrderItemRequest request) {
-        OrderItem result = orderItemService.addItem(request);
+    @PostMapping("/order/{orderId}")
+    public ResponseEntity<Object> addItem(@PathVariable int orderId,
+            @RequestBody OrderItemRequest request) {
+        OrderItem result = orderItemService.addItem(orderId, request);
         return ResponseEntity.created(URI.create("/order-items/" + result.getId())).body(result);
     }
 
     @DeleteMapping("/{itemId}")
     public ResponseEntity<Object> deleteItem(@PathVariable int itemId) {
-        Optional<OrderItem> result = orderItemService.getItemById(itemId);
-        if (result.isPresent()) {
-            orderItemService.deleteItem(itemId);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        orderItemService.deleteItem(itemId);
+        return ResponseEntity.noContent().build();
     }
 }

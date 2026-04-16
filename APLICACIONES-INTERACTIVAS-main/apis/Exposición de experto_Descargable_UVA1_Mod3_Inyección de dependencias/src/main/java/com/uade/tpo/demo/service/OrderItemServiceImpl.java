@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.OrderItemRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderItemRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
@@ -36,12 +37,12 @@ public class OrderItemServiceImpl implements OrderItemService {
         return orderItemRepository.findById(itemId);
     }
 
-    public OrderItem addItem(OrderItemRequest request) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found: " + request.getOrderId()));
+    public OrderItem addItem(int orderId, OrderItemRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
 
         ProductVariant variant = productVariantRepository.findById(request.getVariantId())
-                .orElseThrow(() -> new RuntimeException("Variant not found: " + request.getVariantId()));
+                .orElseThrow(() -> new NotFoundException("ProductVariant", request.getVariantId()));
 
         BigDecimal unitPrice = variant.getBasePrice();
         BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
@@ -51,7 +52,8 @@ public class OrderItemServiceImpl implements OrderItemService {
                 .variant(variant)
                 .quantity(request.getQuantity())
                 .unitPriceAtTime(unitPrice)
-                .discountApplied(BigDecimal.ZERO)
+                .productDiscountApplied(BigDecimal.ZERO)
+                .couponDiscountApplied(BigDecimal.ZERO)
                 .subtotal(subtotal)
                 .build();
 
@@ -64,7 +66,7 @@ public class OrderItemServiceImpl implements OrderItemService {
 
     public void deleteItem(int itemId) {
         OrderItem item = orderItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("OrderItem not found: " + itemId));
+                .orElseThrow(() -> new NotFoundException("OrderItem", itemId));
         Order order = item.getOrder();
         orderItemRepository.deleteById(itemId);
         recalculateOrderTotal(order);

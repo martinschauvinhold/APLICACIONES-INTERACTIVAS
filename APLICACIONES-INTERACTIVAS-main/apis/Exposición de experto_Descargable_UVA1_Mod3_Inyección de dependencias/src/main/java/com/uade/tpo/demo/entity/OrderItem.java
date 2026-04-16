@@ -42,8 +42,11 @@ public class OrderItem {
     @Column(name = "unit_price_at_time", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPriceAtTime;
 
-    @Column(name = "discount_applied", precision = 10, scale = 2)
-    private BigDecimal discountApplied;
+    @Column(name = "product_discount_applied", precision = 10, scale = 2)
+    private BigDecimal productDiscountApplied;
+
+    @Column(name = "coupon_discount_applied", precision = 10, scale = 2)
+    private BigDecimal couponDiscountApplied;
 
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
