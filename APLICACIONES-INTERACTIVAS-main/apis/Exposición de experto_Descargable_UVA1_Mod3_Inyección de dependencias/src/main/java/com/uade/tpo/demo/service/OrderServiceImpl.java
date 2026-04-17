@@ -40,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByUserId(userId);
     }
 
+    // TODO: sera reescrito en PR 3 con logica de checkout completa
     public Order createOrder(OrderRequest orderRequest) {
         User user = userRepository.findById(orderRequest.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found: " + orderRequest.getUserId()));
@@ -48,16 +49,16 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(address)
-                .status(orderRequest.getStatus())
+                .status("PENDING")
                 .createdAt(new Date())
                 .updatedAt(new Date())
                 .build();
         return orderRepository.save(order);
     }
 
+    // TODO: sera reescrito en PR 3
     public Order updateOrder(int orderId, OrderRequest orderRequest) {
         Order order = orderRepository.findById(orderId).get();
-        order.setStatus(orderRequest.getStatus());
         order.setUpdatedAt(new Date());
         return orderRepository.save(order);
     }

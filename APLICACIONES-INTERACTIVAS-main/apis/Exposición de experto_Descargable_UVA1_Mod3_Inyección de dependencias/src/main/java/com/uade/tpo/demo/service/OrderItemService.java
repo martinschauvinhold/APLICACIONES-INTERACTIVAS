@@ -8,7 +8,10 @@ import com.uade.tpo.demo.entity.dto.OrderItemRequest;
 
 public interface OrderItemService {
     List<OrderItem> getItemsByOrder(int orderId);
+
     Optional<OrderItem> getItemById(int itemId);
-    OrderItem addItem(OrderItemRequest request);
+
+    OrderItem addItem(int orderId, OrderItemRequest request);
+
     void deleteItem(int itemId);
 }
