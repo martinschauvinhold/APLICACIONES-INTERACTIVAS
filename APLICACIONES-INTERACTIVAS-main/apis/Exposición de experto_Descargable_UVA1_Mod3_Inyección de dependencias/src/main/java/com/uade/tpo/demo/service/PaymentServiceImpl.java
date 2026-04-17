@@ -39,13 +39,13 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     // TODO: sera reescrito en PR 4 con logica de pago real, locking y descuento de stock
-    public Payment createPayment(PaymentRequest paymentRequest) {
+    public Payment createPayment(PaymentRequest paymentRequest, boolean simulateFailure) {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
                 .orElseThrow(() -> new NotFoundException("Order", paymentRequest.getOrderId()));
 
-        // Configurar simulacion de fallo si se pide
+        // Configurar simulacion de fallo si se pide (flag de testing, no en prod)
         if (paymentProcessor instanceof SimulatedPaymentProcessor simulated) {
-            simulated.setSimulateFailure(paymentRequest.isSimulateFailure());
+            simulated.setSimulateFailure(simulateFailure);
         }
 
         var result = paymentProcessor.process(order.getTotalAmount(), paymentRequest.getPaymentMethod());

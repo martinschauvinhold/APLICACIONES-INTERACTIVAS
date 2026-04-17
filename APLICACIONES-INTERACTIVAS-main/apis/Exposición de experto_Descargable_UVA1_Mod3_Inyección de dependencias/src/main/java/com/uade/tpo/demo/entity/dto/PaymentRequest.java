@@ -6,5 +6,4 @@ import lombok.Data;
 public class PaymentRequest {
     private int orderId;
     private String paymentMethod;
-    private boolean simulateFailure;
 }
