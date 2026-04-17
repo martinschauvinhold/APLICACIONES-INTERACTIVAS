@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Payment;
@@ -46,8 +47,10 @@ public class PaymentsController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> createPayment(@RequestBody PaymentRequest paymentRequest) {
-        Payment result = paymentService.createPayment(paymentRequest);
+    public ResponseEntity<Object> createPayment(
+            @RequestBody PaymentRequest paymentRequest,
+            @RequestParam(required = false, defaultValue = "false") boolean simulateFailure) {
+        Payment result = paymentService.createPayment(paymentRequest, simulateFailure);
         return ResponseEntity.created(URI.create("/payments/" + result.getId())).body(result);
     }
 

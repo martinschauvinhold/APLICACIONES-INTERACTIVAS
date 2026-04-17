@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.PaymentRepository;
 
@@ -35,14 +36,14 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findByOrderId(orderId);
     }
 
-    public Payment createPayment(PaymentRequest paymentRequest) {
+    public Payment createPayment(PaymentRequest paymentRequest, boolean simulateFailure) {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found: " + paymentRequest.getOrderId()));
+                .orElseThrow(() -> new NotFoundException("Order", paymentRequest.getOrderId()));
         Payment payment = Payment.builder()
                 .order(order)
                 .paymentMethod(paymentRequest.getPaymentMethod())
-                .transactionId(paymentRequest.getTransactionId())
-                .paymentStatus(paymentRequest.getPaymentStatus())
+                .transactionId(null)
+                .paymentStatus("PENDING")
                 .paidAt(new Date())
                 .build();
         return paymentRepository.save(payment);
@@ -50,10 +51,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     public Payment updatePayment(int paymentId, PaymentRequest paymentRequest) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+                .orElseThrow(() -> new NotFoundException("Payment", paymentId));
         payment.setPaymentMethod(paymentRequest.getPaymentMethod());
-        payment.setTransactionId(paymentRequest.getTransactionId());
-        payment.setPaymentStatus(paymentRequest.getPaymentStatus());
         return paymentRepository.save(payment);
     }
 
