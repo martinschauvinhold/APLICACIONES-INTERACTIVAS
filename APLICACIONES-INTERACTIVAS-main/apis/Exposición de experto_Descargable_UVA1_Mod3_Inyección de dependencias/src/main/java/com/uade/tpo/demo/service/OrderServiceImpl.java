@@ -88,133 +88,72 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order createOrder(OrderRequest orderRequest) {
-        // 1. Validate user
         User user = userRepository.findById(orderRequest.getUserId())
                 .orElseThrow(() -> new NotFoundException("User", orderRequest.getUserId()));
 
-        // 2. Validate address
         Address address = addressRepository.findById(orderRequest.getShippingAddressId())
                 .orElseThrow(() -> new NotFoundException("Address", orderRequest.getShippingAddressId()));
 
-        // 3. Validate items
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
             throw new BusinessRuleException("La orden debe contener al menos un item");
         }
 
-        // 4. Validate coupon if present
         Coupon coupon = null;
         if (orderRequest.getCouponCode() != null && !orderRequest.getCouponCode().isEmpty()) {
             coupon = couponService.validateCoupon(orderRequest.getCouponCode());
         }
 
-        // Build the order first
-        Order order = Order.builder()
-                .user(user)
-                .shippingAddress(address)
-                .status("PENDING")
-                .createdAt(new Date())
-                .updatedAt(new Date())
-                .build();
-
-        order = orderRepository.save(order);
-
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
 
-        // 5. Process each item
         for (OrderItemRequest itemReq : orderRequest.getItems()) {
-            // 5a. Find variant
             ProductVariant variant = productVariantRepository.findById(itemReq.getVariantId())
                     .orElseThrow(() -> new NotFoundException("ProductVariant", itemReq.getVariantId()));
 
-            // 5b-5c. Check stock
             List<Inventory> inventoryRows = inventoryRepository.findByVariantId(itemReq.getVariantId());
             int stock = inventoryRows.stream().mapToInt(Inventory::getStockQuantity).sum();
 
-            // 5d. Validate stock
             if (stock < itemReq.getQuantity()) {
                 throw new BusinessRuleException("Stock insuficiente para variante " + itemReq.getVariantId()
                         + ". Stock disponible: " + stock + ", solicitado: " + itemReq.getQuantity());
             }
 
-            // 5e. Determine unit price using PriceTiers
-            List<PriceTier> tiers = priceTierRepository.findByVariantId(itemReq.getVariantId());
-            tiers.sort(Comparator.comparingInt(PriceTier::getMinQuantity).reversed());
+            // Determinar unitPrice usando PriceTiers (precio mayorista):
+            // busca el tier aplicable con mayor minQuantity, si no hay usa basePrice
+            BigDecimal unitPrice = priceTierRepository.findByVariantId(itemReq.getVariantId()).stream()
+                    .filter(tier -> itemReq.getQuantity() >= tier.getMinQuantity())
+                    .max(Comparator.comparingInt(PriceTier::getMinQuantity))
+                    .map(PriceTier::getUnitPrice)
+                    .orElse(variant.getBasePrice());
 
-            BigDecimal unitPrice = variant.getBasePrice();
-            for (PriceTier tier : tiers) {
-                if (itemReq.getQuantity() >= tier.getMinQuantity()) {
-                    unitPrice = tier.getUnitPrice();
-                    break;
-                }
-            }
-
-            // 5f. Get active discounts for product
             Product product = variant.getProduct();
             List<Discount> activeDiscounts = discountService.getActiveDiscountsForProduct(product.getId());
 
-            // 5g. Calculate productDiscountApplied (best discount)
-            BigDecimal productDiscountApplied = BigDecimal.ZERO;
-            if (!activeDiscounts.isEmpty()) {
-                BigDecimal bestDiscount = BigDecimal.ZERO;
-                for (Discount d : activeDiscounts) {
-                    BigDecimal discountValue;
-                    if ("PERCENTAGE".equals(d.getDiscountType())) {
-                        discountValue = unitPrice.multiply(d.getValue()).divide(BigDecimal.valueOf(100), 2,
-                                RoundingMode.HALF_UP);
-                    } else {
-                        discountValue = d.getValue();
-                    }
-                    if (discountValue.compareTo(bestDiscount) > 0) {
-                        bestDiscount = discountValue;
-                    }
-                }
-                // Cap at unitPrice
-                productDiscountApplied = bestDiscount.min(unitPrice);
-            }
+            // Descuento por producto: tomar el mejor, tope = unitPrice
+            final BigDecimal priceForDiscount = unitPrice;
+            BigDecimal productDiscountApplied = activeDiscounts.stream()
+                    .map(d -> calculateDiscountValue(d, priceForDiscount))
+                    .max(Comparator.naturalOrder())
+                    .orElse(BigDecimal.ZERO)
+                    .min(unitPrice);
 
-            // 5h. Calculate couponDiscountApplied
-            BigDecimal couponDiscountApplied = BigDecimal.ZERO;
-            if (coupon != null) {
-                Discount couponDiscount = coupon.getDiscount();
-                boolean applies = false;
+            // Descuento por cupon: solo si aplica al producto/categoria, tope = precio restante
+            BigDecimal maxCoupon = unitPrice.subtract(productDiscountApplied).max(BigDecimal.ZERO);
+            BigDecimal couponDiscountApplied = Optional.ofNullable(coupon)
+                    .map(Coupon::getDiscount)
+                    .filter(d -> couponAppliesTo(d, product))
+                    .map(d -> calculateDiscountValue(d, unitPrice))
+                    .orElse(BigDecimal.ZERO)
+                    .min(maxCoupon);
 
-                if ("PRODUCT".equals(couponDiscount.getAppliesTo()) && couponDiscount.getProduct() != null
-                        && couponDiscount.getProduct().getId().equals(product.getId())) {
-                    applies = true;
-                } else if ("CATEGORY".equals(couponDiscount.getAppliesTo()) && couponDiscount.getCategory() != null
-                        && couponDiscount.getCategory().getId().equals(product.getCategory().getId())) {
-                    applies = true;
-                }
+            BigDecimal effectivePrice = unitPrice
+                    .subtract(productDiscountApplied)
+                    .subtract(couponDiscountApplied)
+                    .max(BigDecimal.ZERO);
 
-                if (applies) {
-                    if ("PERCENTAGE".equals(couponDiscount.getDiscountType())) {
-                        couponDiscountApplied = unitPrice.multiply(couponDiscount.getValue())
-                                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                    } else {
-                        couponDiscountApplied = couponDiscount.getValue();
-                    }
-                    // Cap so total discount doesn't exceed unitPrice
-                    BigDecimal maxCoupon = unitPrice.subtract(productDiscountApplied);
-                    if (maxCoupon.compareTo(BigDecimal.ZERO) < 0) {
-                        maxCoupon = BigDecimal.ZERO;
-                    }
-                    couponDiscountApplied = couponDiscountApplied.min(maxCoupon);
-                }
-            }
-
-            // 5i. effectivePrice
-            BigDecimal effectivePrice = unitPrice.subtract(productDiscountApplied).subtract(couponDiscountApplied);
-            if (effectivePrice.compareTo(BigDecimal.ZERO) < 0) {
-                effectivePrice = BigDecimal.ZERO;
-            }
-
-            // 5j. subtotal
             BigDecimal subtotal = effectivePrice.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
 
-            // 5k. Build OrderItem
             OrderItem orderItem = OrderItem.builder()
-                    .order(order)
                     .variant(variant)
                     .quantity(itemReq.getQuantity())
                     .unitPriceAtTime(unitPrice)
@@ -227,23 +166,27 @@ public class OrderServiceImpl implements OrderService {
             totalAmount = totalAmount.add(subtotal);
         }
 
-        // 6. Set total
-        order.setTotalAmount(totalAmount);
-        order.setUpdatedAt(new Date());
+        Order order = Order.builder()
+                .user(user)
+                .shippingAddress(address)
+                .status("PENDING")
+                .totalAmount(totalAmount)
+                .createdAt(new Date())
+                .updatedAt(new Date())
+                .build();
 
-        // 7. Save order
         order = orderRepository.save(order);
 
-        // 8. Save all order items
+        for (OrderItem item : orderItems) {
+            item.setOrder(order);
+        }
         orderItemRepository.saveAll(orderItems);
 
-        // 9. Increment coupon usage
         if (coupon != null) {
             coupon.setTimesUsed(coupon.getTimesUsed() + 1);
             couponRepository.save(coupon);
         }
 
-        // 10. Return
         return order;
     }
 
@@ -261,17 +204,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order cancelOrder(int orderId) {
-        // 1. Find order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order", orderId));
 
-        // 2. Validate status
         String status = order.getStatus();
         if (!"PENDING".equals(status) && !"PAID".equals(status)) {
             throw new BusinessRuleException("No se puede cancelar una orden con estado: " + status);
         }
 
-        // 3. If PAID, restore stock and refund
         if ("PAID".equals(status)) {
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
@@ -290,10 +230,30 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // 4. Cancel order
         order.setStatus("CANCELLED");
         order.setUpdatedAt(new Date());
         return orderRepository.save(order);
+    }
+
+    // Calcula el valor en $ de un descuento aplicado a un precio unitario.
+    // PERCENTAGE: porcentaje sobre el precio. FIXED: monto fijo.
+    private BigDecimal calculateDiscountValue(Discount discount, BigDecimal unitPrice) {
+        if ("PERCENTAGE".equals(discount.getDiscountType())) {
+            return unitPrice.multiply(discount.getValue())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        return discount.getValue();
+    }
+
+    // Verifica si un descuento aplica a un producto dado (por producto o por categoria)
+    private boolean couponAppliesTo(Discount discount, Product product) {
+        if ("PRODUCT".equals(discount.getAppliesTo()) && discount.getProduct() != null) {
+            return discount.getProduct().getId().equals(product.getId());
+        }
+        if ("CATEGORY".equals(discount.getAppliesTo()) && discount.getCategory() != null) {
+            return discount.getCategory().getId().equals(product.getCategory().getId());
+        }
+        return false;
     }
 
     @Override
@@ -302,17 +262,14 @@ public class OrderServiceImpl implements OrderService {
         long fortyEightHoursMs = 48L * 60 * 60 * 1000;
         Date cutoff = new Date(System.currentTimeMillis() - fortyEightHoursMs);
 
-        // 2. Find expired pending orders
         List<Order> expiredOrders = orderRepository.findByStatusAndCreatedAtBefore("PENDING", cutoff);
 
-        // 3. Cancel each
         for (Order order : expiredOrders) {
             order.setStatus("CANCELLED");
             order.setUpdatedAt(new Date());
             orderRepository.save(order);
         }
 
-        // 4. Return count
         return expiredOrders.size();
     }
 }
