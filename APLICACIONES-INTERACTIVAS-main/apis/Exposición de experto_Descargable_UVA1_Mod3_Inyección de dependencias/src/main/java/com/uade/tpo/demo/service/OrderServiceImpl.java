@@ -146,19 +146,17 @@ public class OrderServiceImpl implements OrderService {
                     .orElse(BigDecimal.ZERO)
                     .min(maxCoupon);
 
-            BigDecimal effectivePrice = unitPrice
-                    .subtract(productDiscountApplied)
-                    .subtract(couponDiscountApplied)
-                    .max(BigDecimal.ZERO);
+            // Descuento total aplicado al item (producto + cupon)
+            BigDecimal discountApplied = productDiscountApplied.add(couponDiscountApplied);
 
+            BigDecimal effectivePrice = unitPrice.subtract(discountApplied).max(BigDecimal.ZERO);
             BigDecimal subtotal = effectivePrice.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
 
             OrderItem orderItem = OrderItem.builder()
                     .variant(variant)
                     .quantity(itemReq.getQuantity())
                     .unitPriceAtTime(unitPrice)
-                    .productDiscountApplied(productDiscountApplied)
-                    .couponDiscountApplied(couponDiscountApplied)
+                    .discountApplied(discountApplied)
                     .subtotal(subtotal)
                     .build();
 
