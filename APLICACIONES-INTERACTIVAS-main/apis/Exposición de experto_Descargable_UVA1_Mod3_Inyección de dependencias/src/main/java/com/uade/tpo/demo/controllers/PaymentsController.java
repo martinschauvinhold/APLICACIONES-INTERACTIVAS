@@ -7,11 +7,9 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,31 +44,20 @@ public class PaymentsController {
         return ResponseEntity.ok(paymentService.getPaymentsByOrder(orderId));
     }
 
+    /**
+     * Procesa el pago de una orden.
+     * - Valida que la orden este en PENDING
+     * - Bloquea el inventario y revalida stock
+     * - Si el pago es exitoso: descuenta stock y marca orden como PAID
+     * - Si el pago falla: la orden queda en PENDING
+     *
+     * Query param opcional: ?simulateFailure=true para forzar fallo (solo testing).
+     */
     @PostMapping
-    public ResponseEntity<Object> createPayment(
+    public ResponseEntity<Object> processPayment(
             @RequestBody PaymentRequest paymentRequest,
             @RequestParam(required = false, defaultValue = "false") boolean simulateFailure) {
-        Payment result = paymentService.createPayment(paymentRequest, simulateFailure);
+        Payment result = paymentService.processPayment(paymentRequest, simulateFailure);
         return ResponseEntity.created(URI.create("/payments/" + result.getId())).body(result);
-    }
-
-    @PutMapping("/{paymentId}")
-    public ResponseEntity<Object> updatePayment(@PathVariable int paymentId, @RequestBody PaymentRequest paymentRequest) {
-        Optional<Payment> result = paymentService.getPaymentById(paymentId);
-        if (result.isPresent()) {
-            Payment updated = paymentService.updatePayment(paymentId, paymentRequest);
-            return ResponseEntity.ok(updated);
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/{paymentId}")
-    public ResponseEntity<Object> deletePayment(@PathVariable int paymentId) {
-        Optional<Payment> result = paymentService.getPaymentById(paymentId);
-        if (result.isPresent()) {
-            paymentService.deletePayment(paymentId);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
     }
 }
