@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
+import com.uade.tpo.demo.entity.PaymentResultStatus;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
@@ -100,11 +102,11 @@ class PaymentServiceTest {
     @Test
     void processPayment_deberiaProcesarExitosamente_cuandoOrdenEnPending() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").totalAmount(new BigDecimal("500")).build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).totalAmount(new BigDecimal("500")).build();
         var variant = ProductVariant.builder().id(1).build();
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(10).build();
-        var paymentResult = PaymentResult.builder().status("COMPLETED").transactionId("TXN-001").build();
+        var paymentResult = PaymentResult.builder().status(PaymentResultStatus.COMPLETED).transactionId("TXN-001").build();
         var savedPayment = Payment.builder().id(1).paymentStatus("COMPLETED").transactionId("TXN-001").build();
 
         var request = new PaymentRequest();
@@ -124,7 +126,7 @@ class PaymentServiceTest {
 
         // Assert
         assertThat(result.getPaymentStatus()).isEqualTo("COMPLETED");
-        assertThat(order.getStatus()).isEqualTo("PAID");
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
         verify(inventoryRepository).saveAll(anyList());
         verify(orderRepository).save(any());
     }
@@ -132,11 +134,11 @@ class PaymentServiceTest {
     @Test
     void processPayment_deberiaProcesarFallo_cuandoProcessorRetornaFailed() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").totalAmount(new BigDecimal("500")).build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).totalAmount(new BigDecimal("500")).build();
         var variant = ProductVariant.builder().id(1).build();
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(10).build();
-        var paymentResult = PaymentResult.builder().status("FAILED").build();
+        var paymentResult = PaymentResult.builder().status(PaymentResultStatus.FAILED).build();
         var savedPayment = Payment.builder().id(1).paymentStatus("FAILED").build();
 
         var request = new PaymentRequest();
@@ -154,7 +156,7 @@ class PaymentServiceTest {
 
         // Assert
         assertThat(result.getPaymentStatus()).isEqualTo("FAILED");
-        assertThat(order.getStatus()).isEqualTo("PENDING");
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
     }
 
     @Test
@@ -173,7 +175,7 @@ class PaymentServiceTest {
     @Test
     void processPayment_deberiaLanzarBusinessRuleException_cuandoOrdenNoEstaPending() {
         // Arrange
-        var order = Order.builder().id(1).status("PAID").build();
+        var order = Order.builder().id(1).status(OrderStatus.PAID).build();
         var request = new PaymentRequest();
         request.setOrderId(1);
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));

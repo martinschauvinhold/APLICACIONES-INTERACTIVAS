@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.uade.tpo.demo.entity.PaymentResultStatus;
 import com.uade.tpo.demo.entity.dto.PaymentResult;
 
 @Service
@@ -25,7 +26,7 @@ public class SimulatedPaymentProcessor implements PaymentProcessor {
         if (!VALID_METHODS.contains(paymentMethod)) {
             return PaymentResult.builder()
                     .transactionId(null)
-                    .status("FAILED")
+                    .status(PaymentResultStatus.FAILED)
                     .message("Metodo de pago invalido: " + paymentMethod
                             + ". Metodos validos: " + VALID_METHODS)
                     .build();
@@ -34,7 +35,7 @@ public class SimulatedPaymentProcessor implements PaymentProcessor {
         if (simulateFailure) {
             return PaymentResult.builder()
                     .transactionId(null)
-                    .status("FAILED")
+                    .status(PaymentResultStatus.FAILED)
                     .message("Pago rechazado (simulacion de fallo activada)")
                     .build();
         }
@@ -43,7 +44,7 @@ public class SimulatedPaymentProcessor implements PaymentProcessor {
 
         return PaymentResult.builder()
                 .transactionId(transactionId)
-                .status("COMPLETED")
+                .status(PaymentResultStatus.COMPLETED)
                 .message("Pago procesado exitosamente por $" + amount + " via " + paymentMethod)
                 .build();
     }

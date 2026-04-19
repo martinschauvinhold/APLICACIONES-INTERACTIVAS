@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
+import com.uade.tpo.demo.entity.PaymentResultStatus;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
 import com.uade.tpo.demo.entity.dto.PaymentResult;
@@ -67,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
                 .orElseThrow(() -> new NotFoundException("Order", paymentRequest.getOrderId()));
 
-        if (!"PENDING".equals(order.getStatus())) {
+        if (order.getStatus() != OrderStatus.PENDING) {
             throw new BusinessRuleException(
                     "Solo se pueden pagar ordenes en estado PENDING. Estado actual: " + order.getStatus());
         }
@@ -98,19 +100,19 @@ public class PaymentServiceImpl implements PaymentService {
                 .order(order)
                 .paymentMethod(paymentRequest.getPaymentMethod())
                 .transactionId(result.getTransactionId())
-                .paymentStatus(result.getStatus())
+                .paymentStatus(result.getStatus().name())
                 .paidAt(new Date())
                 .build();
 
         payment = paymentRepository.save(payment);
 
-        if ("COMPLETED".equals(result.getStatus())) {
+        if (result.getStatus() == PaymentResultStatus.COMPLETED) {
             // Descontar stock (estrategia: primero disponible)
             for (OrderItem item : items) {
                 decreaseStock(item.getVariant().getId(), item.getQuantity());
             }
 
-            order.setStatus("PAID");
+            order.setStatus(OrderStatus.PAID);
             order.setUpdatedAt(new Date());
             orderRepository.save(order);
         }
