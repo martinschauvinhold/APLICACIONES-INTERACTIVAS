@@ -118,7 +118,7 @@
           }
         },
         {
-          "name": "Crear usuario",
+          "name": "Crear usuario (admin/seller) — solo admin",
           "request": {
             "method": "POST",
             "header": [
@@ -127,7 +127,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"jperez\",\n  \"email\": \"jperez@mail.com\",\n  \"passwordHash\": \"hashed_password_123\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"role\": \"buyer\",\n  \"phone\": \"+54 11 1234-5678\"\n}",
+              "raw": "{\n  \"username\": \"vendedor1\",\n  \"email\": \"vendedor1@mail.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"María\",\n  \"lastName\": \"González\",\n  \"role\": \"seller\",\n  \"phone\": \"+54 11 5555-0000\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -147,7 +147,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"jperez\",\n  \"email\": \"jperez@mail.com\",\n  \"passwordHash\": \"hashed_password_456\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"role\": \"buyer\",\n  \"phone\": \"+54 11 9999-0000\"\n}",
+              "raw": "{\n  \"username\": \"jperez\",\n  \"email\": \"jperez@mail.com\",\n  \"password\": \"nuevoPassword456\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"role\": \"buyer\",\n  \"phone\": \"+54 11 9999-0000\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
