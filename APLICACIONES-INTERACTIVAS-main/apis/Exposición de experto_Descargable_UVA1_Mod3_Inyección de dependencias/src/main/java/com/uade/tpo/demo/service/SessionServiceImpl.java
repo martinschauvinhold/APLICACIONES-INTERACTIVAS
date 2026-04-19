@@ -17,7 +17,7 @@ public class SessionServiceImpl implements SessionService {
     private SessionRepository sessionRepository;
 
     public List<Session> getSessionsByUser(int userId) {
-        return sessionRepository.findByUser_Id(userId);
+        return sessionRepository.findByUserId(userId);
     }
 
     public Optional<Session> getSessionById(int sessionId) {

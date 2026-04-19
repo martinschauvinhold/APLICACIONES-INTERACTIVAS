@@ -1,5 +1,6 @@
 package com.uade.tpo.demo.config;
 
+import com.uade.tpo.demo.repository.SessionRepository;
 import com.uade.tpo.demo.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,6 +26,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private SessionRepository sessionRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -43,7 +47,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            if (jwtService.isTokenValid(token)) {
+            if (jwtService.isTokenValid(token) && sessionRepository.existsByUserEmail(email)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

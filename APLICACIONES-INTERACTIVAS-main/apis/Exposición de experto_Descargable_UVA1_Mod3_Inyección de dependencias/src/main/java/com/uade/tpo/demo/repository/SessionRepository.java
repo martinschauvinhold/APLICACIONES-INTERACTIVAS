@@ -10,6 +10,7 @@ import com.uade.tpo.demo.entity.User;
 
 @Repository
 public interface SessionRepository extends JpaRepository<Session, Integer> {
-    List<Session> findByUser_Id(int userId);
+    List<Session> findByUserId(int userId);
     void deleteByUser(User user);
+    boolean existsByUserEmail(String email);
 }
