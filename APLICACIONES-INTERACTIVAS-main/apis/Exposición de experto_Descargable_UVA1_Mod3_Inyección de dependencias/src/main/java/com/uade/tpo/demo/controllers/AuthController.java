@@ -44,6 +44,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        if (userRepository.findByUsername(request.username()).isPresent()) {
+            throw new DuplicateException("Usuario", "username", request.username());
+        }
         if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new DuplicateException("Usuario", "email", request.email());
         }
