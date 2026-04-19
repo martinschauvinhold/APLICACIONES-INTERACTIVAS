@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.Review;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ReviewRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.ReviewRepository;
 import com.uade.tpo.demo.repository.UserRepository;
@@ -41,8 +42,10 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     public Review createReview(ReviewRequest reviewRequest) {
-        User user = userRepository.findById(reviewRequest.getUserId()).get();
-        Product product = productRepository.findById(reviewRequest.getProductId()).get();
+        User user = userRepository.findById(reviewRequest.getUserId())
+                .orElseThrow(() -> new NotFoundException("User", reviewRequest.getUserId()));
+        Product product = productRepository.findById(reviewRequest.getProductId())
+                .orElseThrow(() -> new NotFoundException("Product", reviewRequest.getProductId()));
         Review review = Review.builder()
                 .user(user)
                 .product(product)
@@ -54,7 +57,8 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     public Review updateReview(int reviewId, ReviewRequest reviewRequest) {
-        Review review = reviewRepository.findById(reviewId).get();
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new NotFoundException("Review", reviewId));
         review.setRating(reviewRequest.getRating());
         review.setComment(reviewRequest.getComment());
         return reviewRepository.save(review);

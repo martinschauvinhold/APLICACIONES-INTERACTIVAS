@@ -4,6 +4,22 @@ API REST construida con Spring Boot 3 y SQL Server.
 
 ---
 
+## Inicio rápido (Make)
+
+Si tenés `make` instalado, es la forma más simple de levantar todo:
+
+```bash
+make start-all    # primera vez: levanta Docker, inicializa la DB y corre la app
+make start-app    # si Docker ya está corriendo
+make stop-db      # baja el contenedor
+make wipe-db      # baja el contenedor y BORRA los datos
+make run-tests    # corre los tests (no necesita Docker)
+```
+
+Corré `make` sin argumentos para ver todos los comandos disponibles.
+
+---
+
 ## Requisitos
 
 - Java 17+

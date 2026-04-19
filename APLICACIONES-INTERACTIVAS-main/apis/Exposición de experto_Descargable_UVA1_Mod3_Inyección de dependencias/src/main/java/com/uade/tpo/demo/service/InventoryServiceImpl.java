@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.Warehouse;
 import com.uade.tpo.demo.entity.dto.InventoryRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.InventoryRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 import com.uade.tpo.demo.repository.WarehouseRepository;
@@ -41,8 +42,10 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     public Inventory createInventory(InventoryRequest inventoryRequest) {
-        ProductVariant variant = productVariantRepository.findById(inventoryRequest.getVariantId()).get();
-        Warehouse warehouse = warehouseRepository.findById(inventoryRequest.getWarehouseId()).get();
+        ProductVariant variant = productVariantRepository.findById(inventoryRequest.getVariantId())
+                .orElseThrow(() -> new NotFoundException("ProductVariant", inventoryRequest.getVariantId()));
+        Warehouse warehouse = warehouseRepository.findById(inventoryRequest.getWarehouseId())
+                .orElseThrow(() -> new NotFoundException("Warehouse", inventoryRequest.getWarehouseId()));
         Inventory inventory = Inventory.builder()
                 .variant(variant)
                 .warehouse(warehouse)
@@ -53,7 +56,8 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     public Inventory updateInventory(int inventoryId, InventoryRequest inventoryRequest) {
-        Inventory inventory = inventoryRepository.findById(inventoryId).get();
+        Inventory inventory = inventoryRepository.findById(inventoryId)
+                .orElseThrow(() -> new NotFoundException("Inventory", inventoryId));
         inventory.setStockQuantity(inventoryRequest.getStockQuantity());
         inventory.setLastUpdated(new Date());
         return inventoryRepository.save(inventory);
