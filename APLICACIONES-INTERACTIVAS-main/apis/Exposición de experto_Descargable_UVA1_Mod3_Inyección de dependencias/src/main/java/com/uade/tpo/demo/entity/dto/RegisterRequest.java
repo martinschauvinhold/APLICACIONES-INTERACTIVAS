@@ -7,4 +7,10 @@ public record RegisterRequest(
         String firstName,
         String lastName,
         String phone
-) {}
+) {
+    @Override
+    public String toString() {
+        return "RegisterRequest[username=" + username + ", email=" + email +
+               ", firstName=" + firstName + ", lastName=" + lastName + ", phone=" + phone + "]";
+    }
+}

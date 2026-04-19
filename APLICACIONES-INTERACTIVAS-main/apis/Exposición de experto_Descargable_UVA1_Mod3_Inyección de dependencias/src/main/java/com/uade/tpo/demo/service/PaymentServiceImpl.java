@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,8 @@ import com.uade.tpo.demo.repository.PaymentRepository;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -89,6 +93,10 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
+        if (simulateFailure) {
+            logger.warn("processPayment llamado con simulateFailure=true para orden {}", paymentRequest.getOrderId());
+        }
+
         // Configurar simulacion de fallo si se pide (flag de testing, no en prod)
         if (paymentProcessor instanceof SimulatedPaymentProcessor simulated) {
             simulated.setSimulateFailure(simulateFailure);
@@ -117,6 +125,10 @@ public class PaymentServiceImpl implements PaymentService {
             orderRepository.save(order);
         }
         // Si FAILED: la orden sigue en PENDING y el usuario puede reintentar
+        if (result.getStatus() != PaymentResultStatus.COMPLETED) {
+            logger.warn("Pago fallido para orden {}. Método: {}, TransactionId: {}, Status: {}",
+                    order.getId(), paymentRequest.getPaymentMethod(), result.getTransactionId(), result.getStatus());
+        }
 
         return payment;
     }
