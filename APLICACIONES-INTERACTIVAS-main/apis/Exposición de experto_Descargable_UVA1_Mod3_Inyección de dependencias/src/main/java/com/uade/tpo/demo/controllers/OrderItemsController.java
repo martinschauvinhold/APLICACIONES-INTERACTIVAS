@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,19 +23,20 @@ public class OrderItemsController {
     private OrderItemService orderItemService;
 
     @GetMapping("/order/{orderId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<List<OrderItem>> getItemsByOrder(@PathVariable int orderId) {
         return ResponseEntity.ok(orderItemService.getItemsByOrder(orderId));
     }
 
     @GetMapping("/{itemId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<OrderItem> getItemById(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @DeleteMapping("/{itemId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Object> deleteItem(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
         if (result.isPresent()) {

@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,9 +36,7 @@ public class ReviewsController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<Review> getReviewById(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/product/{productId}")
@@ -46,12 +45,14 @@ public class ReviewsController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('buyer')")
     public ResponseEntity<Object> createReview(@RequestBody ReviewRequest reviewRequest) {
         Review result = reviewService.createReview(reviewRequest);
         return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(result);
     }
 
     @PutMapping("/{reviewId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @RequestBody ReviewRequest reviewRequest) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {
@@ -62,6 +63,7 @@ public class ReviewsController {
     }
 
     @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteReview(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {

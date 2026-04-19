@@ -193,4 +193,20 @@ class ProductReturnServiceTest {
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("99");
     }
+
+    @Test
+    void getReturnsByOrder_deberiaRetornarDevoluciones_cuandoOrderExiste() {
+        // Arrange
+        var order = Order.builder().id(1).build();
+        var returns = List.of(
+                ProductReturn.builder().id(1).order(order).reason("Pantalla rota").build(),
+                ProductReturn.builder().id(2).order(order).reason("Batería defectuosa").build());
+        when(returnRepository.findByOrderId(1)).thenReturn(returns);
+
+        // Act
+        var result = returnService.getReturnsByOrder(1);
+
+        // Assert
+        assertThat(result).hasSize(2);
+    }
 }

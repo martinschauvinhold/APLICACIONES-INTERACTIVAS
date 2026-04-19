@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,36 +28,28 @@ public class PaymentsController {
     private PaymentService paymentService;
 
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<ArrayList<Payment>> getPayments() {
         return ResponseEntity.ok(paymentService.getPayments());
     }
 
     @GetMapping("/{paymentId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Payment> getPaymentById(@PathVariable int paymentId) {
         Optional<Payment> result = paymentService.getPaymentById(paymentId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/order/{orderId}")
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<List<Payment>> getPaymentsByOrder(@PathVariable int orderId) {
         return ResponseEntity.ok(paymentService.getPaymentsByOrder(orderId));
     }
 
-    /**
-     * Procesa el pago de una orden.
-     * - Valida que la orden este en PENDING
-     * - Bloquea el inventario y revalida stock
-     * - Si el pago es exitoso: descuenta stock y marca orden como PAID
-     * - Si el pago falla: la orden queda en PENDING
-     *
-     * Query param opcional: ?simulateFailure=true para forzar fallo (solo testing).
-     */
     @PostMapping
-    public ResponseEntity<Object> processPayment(
-            @RequestBody PaymentRequest paymentRequest,
-            @RequestParam(required = false, defaultValue = "false") boolean simulateFailure) {
+    @PreAuthorize("hasRole('buyer')")
+    public ResponseEntity<Payment> processPayment(@RequestBody PaymentRequest paymentRequest,
+                                                   @RequestParam(defaultValue = "false") boolean simulateFailure) {
         Payment result = paymentService.processPayment(paymentRequest, simulateFailure);
         return ResponseEntity.created(URI.create("/payments/" + result.getId())).body(result);
     }

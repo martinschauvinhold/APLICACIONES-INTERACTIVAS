@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,18 +35,18 @@ public class ProductsController {
     @GetMapping("/{productId}")
     public ResponseEntity<Product> getProductById(@PathVariable int productId) {
         Optional<Product> result = productService.getProductById(productId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> createProduct(@RequestBody ProductRequest productRequest) {
         Product result = productService.createProduct(productRequest);
         return ResponseEntity.created(URI.create("/products/" + result.getId())).body(result);
     }
 
     @PutMapping("/{productId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateProduct(@PathVariable int productId,
             @RequestBody ProductRequest productRequest) {
         Optional<Product> result = productService.getProductById(productId);
@@ -57,6 +58,7 @@ public class ProductsController {
     }
 
     @DeleteMapping("/{productId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteProduct(@PathVariable int productId) {
         Optional<Product> result = productService.getProductById(productId);
         if (result.isPresent()) {

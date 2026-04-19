@@ -156,4 +156,20 @@ class DeliveryServiceTest {
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("99");
     }
+
+    @Test
+    void getDeliveriesByOrder_deberiaRetornarListaFiltrada_cuandoOrderExiste() {
+        // Arrange
+        var order = Order.builder().id(1).build();
+        var deliveries = List.of(
+                Delivery.builder().id(1).order(order).shippingMethod("correo").build(),
+                Delivery.builder().id(2).order(order).shippingMethod("moto").build());
+        when(deliveryRepository.findByOrderId(1)).thenReturn(deliveries);
+
+        // Act
+        var result = deliveryService.getDeliveriesByOrder(1);
+
+        // Assert
+        assertThat(result).hasSize(2);
+    }
 }

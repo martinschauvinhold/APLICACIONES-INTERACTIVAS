@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +29,7 @@ public class DeliveriesController {
     private final DeliveryService deliveryService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<List<Delivery>> getDeliveries() {
         return ResponseEntity.ok(deliveryService.getDeliveries());
     }
@@ -43,18 +45,21 @@ public class DeliveriesController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Delivery> createDelivery(@Valid @RequestBody DeliveryRequest request) {
         Delivery created = deliveryService.createDelivery(request);
         return ResponseEntity.created(URI.create("/deliveries/" + created.getId())).body(created);
     }
 
     @PutMapping("/{deliveryId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Delivery> updateDelivery(@PathVariable Integer deliveryId,
                                                     @Valid @RequestBody DeliveryRequest request) {
         return ResponseEntity.ok(deliveryService.updateDelivery(deliveryId, request));
     }
 
     @DeleteMapping("/{deliveryId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Void> deleteDelivery(@PathVariable Integer deliveryId) {
         deliveryService.deleteDelivery(deliveryId);
         return ResponseEntity.noContent().build();

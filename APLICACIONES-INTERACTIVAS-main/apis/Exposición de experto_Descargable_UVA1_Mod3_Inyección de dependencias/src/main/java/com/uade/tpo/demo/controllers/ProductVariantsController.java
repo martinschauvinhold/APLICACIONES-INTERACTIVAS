@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,9 +36,7 @@ public class ProductVariantsController {
     @GetMapping("/{variantId}")
     public ResponseEntity<ProductVariant> getVariantById(@PathVariable int variantId) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/product/{productId}")
@@ -46,12 +45,14 @@ public class ProductVariantsController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> createVariant(@RequestBody ProductVariantRequest variantRequest) {
         ProductVariant result = productVariantService.createVariant(variantRequest);
         return ResponseEntity.created(URI.create("/variants/" + result.getId())).body(result);
     }
 
     @PutMapping("/{variantId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateVariant(@PathVariable int variantId, @RequestBody ProductVariantRequest variantRequest) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
         if (result.isPresent()) {
@@ -62,6 +63,7 @@ public class ProductVariantsController {
     }
 
     @DeleteMapping("/{variantId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> deleteVariant(@PathVariable int variantId) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
         if (result.isPresent()) {
