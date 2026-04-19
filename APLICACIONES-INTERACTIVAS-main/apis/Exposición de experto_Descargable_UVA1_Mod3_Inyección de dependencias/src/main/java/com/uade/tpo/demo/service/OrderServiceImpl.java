@@ -18,6 +18,7 @@ import com.uade.tpo.demo.entity.Discount;
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
@@ -167,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(address)
-                .status("PENDING")
+                .status(OrderStatus.PENDING)
                 .totalAmount(totalAmount)
                 .createdAt(new Date())
                 .updatedAt(new Date())
@@ -205,12 +206,12 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order", orderId));
 
-        String status = order.getStatus();
-        if (!"PENDING".equals(status) && !"PAID".equals(status)) {
+        OrderStatus status = order.getStatus();
+        if (status != OrderStatus.PENDING && status != OrderStatus.PAID) {
             throw new BusinessRuleException("No se puede cancelar una orden con estado: " + status);
         }
 
-        if ("PAID".equals(status)) {
+        if (status == OrderStatus.PAID) {
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
                 List<Inventory> inventoryRows = inventoryRepository.findByVariantId(item.getVariant().getId());
@@ -228,7 +229,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        order.setStatus("CANCELLED");
+        order.setStatus(OrderStatus.CANCELLED);
         order.setUpdatedAt(new Date());
         return orderRepository.save(order);
     }
@@ -260,10 +261,10 @@ public class OrderServiceImpl implements OrderService {
         long fortyEightHoursMs = 48L * 60 * 60 * 1000;
         Date cutoff = new Date(System.currentTimeMillis() - fortyEightHoursMs);
 
-        List<Order> expiredOrders = orderRepository.findByStatusAndCreatedAtBefore("PENDING", cutoff);
+        List<Order> expiredOrders = orderRepository.findByStatusAndCreatedAtBefore(OrderStatus.PENDING, cutoff);
 
         for (Order order : expiredOrders) {
-            order.setStatus("CANCELLED");
+            order.setStatus(OrderStatus.CANCELLED);
             order.setUpdatedAt(new Date());
             orderRepository.save(order);
         }

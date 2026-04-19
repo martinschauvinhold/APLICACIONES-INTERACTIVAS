@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderItemRepository;
@@ -37,7 +38,7 @@ public class OrderItemServiceImpl implements OrderItemService {
                 .orElseThrow(() -> new NotFoundException("OrderItem", itemId));
         Order order = item.getOrder();
 
-        if (!"PENDING".equals(order.getStatus())) {
+        if (order.getStatus() != OrderStatus.PENDING) {
             throw new BusinessRuleException(
                     "Solo se pueden borrar items de ordenes en estado PENDING. Estado actual: "
                             + order.getStatus());
