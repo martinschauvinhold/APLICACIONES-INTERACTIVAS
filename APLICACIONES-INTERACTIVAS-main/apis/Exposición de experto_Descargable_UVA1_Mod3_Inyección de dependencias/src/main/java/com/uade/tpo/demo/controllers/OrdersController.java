@@ -70,4 +70,16 @@ public class OrdersController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<Order> cancelOrder(@PathVariable int orderId) {
+        Order result = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/expired")
+    public ResponseEntity<Integer> cancelExpiredOrders() {
+        int count = orderService.cancelExpiredOrders();
+        return ResponseEntity.ok(count);
+    }
 }

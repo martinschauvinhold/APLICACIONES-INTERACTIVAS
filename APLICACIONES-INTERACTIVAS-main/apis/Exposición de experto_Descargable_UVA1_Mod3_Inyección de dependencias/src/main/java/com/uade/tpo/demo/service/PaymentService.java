@@ -14,9 +14,5 @@ public interface PaymentService {
 
     public List<Payment> getPaymentsByOrder(int orderId);
 
-    public Payment createPayment(PaymentRequest paymentRequest);
-
-    public Payment updatePayment(int paymentId, PaymentRequest paymentRequest);
-
-    public void deletePayment(int paymentId);
+    public Payment processPayment(PaymentRequest paymentRequest, boolean simulateFailure);
 }
