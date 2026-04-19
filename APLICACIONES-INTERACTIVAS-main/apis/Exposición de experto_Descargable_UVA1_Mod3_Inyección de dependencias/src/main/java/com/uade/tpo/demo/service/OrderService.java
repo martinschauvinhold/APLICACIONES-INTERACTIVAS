@@ -19,4 +19,8 @@ public interface OrderService {
     public Order updateOrder(int orderId, OrderRequest orderRequest);
 
     public void deleteOrder(int orderId);
+
+    public Order cancelOrder(int orderId);
+
+    public int cancelExpiredOrders();
 }
