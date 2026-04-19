@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
@@ -21,11 +22,16 @@ import com.uade.tpo.demo.entity.dto.UserRequest;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.UserRepository;
 
+import static org.mockito.ArgumentMatchers.anyString;
+
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -77,12 +83,13 @@ class UserServiceTest {
         var request = new UserRequest();
         request.setUsername("jperez");
         request.setEmail("jperez@mail.com");
-        request.setPasswordHash("hash123");
+        request.setPassword("password123");
         request.setFirstName("Juan");
         request.setLastName("Pérez");
         request.setRole(Role.buyer);
         request.setPhone("+54 11 1234-5678");
 
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hasheado");
         var savedUser = User.builder().id(1).username("jperez").build();
         when(userRepository.save(any())).thenReturn(savedUser);
 
@@ -91,6 +98,7 @@ class UserServiceTest {
 
         // Assert
         assertThat(result.getId()).isEqualTo(1);
+        verify(passwordEncoder).encode("password123");
         verify(userRepository).save(any());
     }
 
@@ -101,7 +109,9 @@ class UserServiceTest {
         var request = new UserRequest();
         request.setUsername("jperez_updated");
         request.setEmail("nuevo@mail.com");
+        request.setPassword("nuevoPassword123");
         request.setPhone("+54 11 9999-0000");
+        when(passwordEncoder.encode(anyString())).thenReturn("$2a$10$hasheado");
         when(userRepository.findById(1)).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -111,6 +121,7 @@ class UserServiceTest {
         // Assert
         assertThat(result.getUsername()).isEqualTo("jperez_updated");
         assertThat(result.getEmail()).isEqualTo("nuevo@mail.com");
+        verify(passwordEncoder).encode("nuevoPassword123");
     }
 
     @Test

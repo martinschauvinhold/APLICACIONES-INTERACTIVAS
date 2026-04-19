@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -94,6 +95,74 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void register_deberiaRetornar400_cuandoPasswordMuyCorto() throws Exception {
+        String body = """
+                {
+                  "username": "jperez",
+                  "email": "juan@mail.com",
+                  "password": "corto"
+                }
+                """;
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("password")));
+    }
+
+    @Test
+    void register_deberiaRetornar400_cuandoEmailInvalido() throws Exception {
+        String body = """
+                {
+                  "username": "jperez",
+                  "email": "no-es-un-email",
+                  "password": "password123"
+                }
+                """;
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void register_deberiaRetornar400_cuandoUsernameVacio() throws Exception {
+        String body = """
+                {
+                  "username": "",
+                  "email": "juan@mail.com",
+                  "password": "password123"
+                }
+                """;
+
+        mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ── @JsonIgnore ───────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser(username = "juan@mail.com")
+    void me_noDeberiaExponerPasswordHash_enLaRespuesta() throws Exception {
+        var usuario = User.builder()
+                .id(1).email("juan@mail.com").username("jperez")
+                .passwordHash("$2a$10$hashBcryptSecreto")
+                .role(Role.buyer).build();
+        when(userRepository.findByEmail("juan@mail.com")).thenReturn(Optional.of(usuario));
+
+        mockMvc.perform(get("/users/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
     // ── login ─────────────────────────────────────────────────────────────────
