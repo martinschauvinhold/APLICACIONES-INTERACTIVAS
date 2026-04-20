@@ -36,7 +36,7 @@ public class ProductVariantsController {
     @GetMapping("/{variantId}")
     public ResponseEntity<ProductVariant> getVariantById(@PathVariable int variantId) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")

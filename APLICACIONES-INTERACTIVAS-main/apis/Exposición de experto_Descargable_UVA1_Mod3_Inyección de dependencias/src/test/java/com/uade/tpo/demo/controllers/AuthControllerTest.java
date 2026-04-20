@@ -56,6 +56,7 @@ class AuthControllerTest {
     void register_deberiaRetornar200ConToken_cuandoDatosValidos() throws Exception {
         when(userRepository.findByEmail("juan@mail.com")).thenReturn(Optional.empty());
         when(jwtService.generateToken("juan@mail.com")).thenReturn("jwt.token.generado");
+        when(jwtService.getExpirationDate()).thenReturn(new Date());
 
         String body = """
                 {
@@ -73,6 +74,8 @@ class AuthControllerTest {
                 .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("jwt.token.generado"));
+
+        verify(sessionRepository).save(any(Session.class));
     }
 
     @Test

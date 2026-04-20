@@ -82,6 +82,7 @@ class ProductVariantServiceTest {
         var variants = List.of(
                 ProductVariant.builder().id(1).product(product).sku("SKU-001").build(),
                 ProductVariant.builder().id(2).product(product).sku("SKU-002").build());
+        when(productRepository.existsById(1)).thenReturn(true);
         when(productVariantRepository.findByProductId(1)).thenReturn(variants);
 
         // Act
@@ -89,6 +90,17 @@ class ProductVariantServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getVariantsByProduct_deberiaLanzarExcepcion_cuandoProductoNoExiste() {
+        // Arrange
+        when(productRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productVariantService.getVariantsByProduct(99))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
