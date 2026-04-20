@@ -55,6 +55,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     public List<Payment> getPaymentsByOrder(int orderId) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new NotFoundException("Order", orderId);
+        }
         return paymentRepository.findByOrderId(orderId);
     }
 

@@ -90,6 +90,7 @@ class PaymentServiceTest {
     void getPaymentsByOrder_deberiaRetornarListaFiltrada() {
         // Arrange
         var payments = List.of(Payment.builder().id(1).paymentStatus("COMPLETED").build());
+        when(orderRepository.existsById(5)).thenReturn(true);
         when(paymentRepository.findByOrderId(5)).thenReturn(payments);
 
         // Act
@@ -97,6 +98,17 @@ class PaymentServiceTest {
 
         // Assert
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getPaymentsByOrder_deberiaLanzarNotFoundException_cuandoOrdenNoExiste() {
+        // Arrange
+        when(orderRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> paymentService.getPaymentsByOrder(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test

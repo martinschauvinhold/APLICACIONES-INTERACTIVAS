@@ -154,10 +154,11 @@ void getById_deberiaRetornar200_cuandoRecursoExiste() throws Exception {
 
 @Test
 void getById_deberiaRetornar404_cuandoRecursoNoExiste() throws Exception {
+    // Si el service retorna Optional.empty(), el controller debe usar notFound() — nunca noContent()
     when(nombreService.getById(99)).thenThrow(new NotFoundException("Nombre", 99));
 
     mockMvc.perform(get("/nombres/99"))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isNotFound()); // 404, no 204
 }
 
 @Test
