@@ -101,3 +101,23 @@ Al terminar la sección:
 - [ ] Los bugs encontrados están en Preguntas abiertas
 - [ ] Se probaron tanto los happy paths como los casos de error
 - [ ] Se verificó que `passwordHash` no aparece en ninguna respuesta que devuelva un usuario
+- [ ] Cobertura de tests verificada (ver paso 5)
+
+---
+
+### Paso 5 — Verificar y completar cobertura de tests
+
+Después de documentar en TESTING.md, revisar si la lógica probada tiene cobertura de tests unitarios:
+
+1. Identificar qué `ServiceImpl` y repositories custom fueron ejercitados en esta sección.
+2. Revisar si existe un `*ServiceTest.java` y `*RepositoryTest.java` para cada uno.
+3. Si se encontraron bugs y se corrigieron, verificar que los casos corregidos estén cubiertos por un test.
+4. Si hay lógica nueva o sin tests, invocar `/nuevos-tests` indicando:
+   - Qué clase testear (`CategoryServiceImpl`, `ProductRepository`, etc.)
+   - Qué métodos o ramas son nuevas o están sin cubrir
+   - Si hay excepciones nuevas que deben verificarse
+
+**Ejemplo de invocación:**
+> `/nuevos-tests CategoryServiceImpl — agregar test para deactivateCategory y deleteCategory con productos`
+
+No inventar resultados de tests — ejecutar `./mvnw test -Dtest="NombreTest"` y reportar el resultado real.
