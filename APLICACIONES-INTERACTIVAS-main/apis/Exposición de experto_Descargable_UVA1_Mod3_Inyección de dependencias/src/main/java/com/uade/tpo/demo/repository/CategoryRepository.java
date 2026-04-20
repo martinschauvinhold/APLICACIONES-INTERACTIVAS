@@ -10,4 +10,5 @@ import com.uade.tpo.demo.entity.Category;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> findByDescription(String description);
+    List<Category> findByIsActiveTrue();
 }

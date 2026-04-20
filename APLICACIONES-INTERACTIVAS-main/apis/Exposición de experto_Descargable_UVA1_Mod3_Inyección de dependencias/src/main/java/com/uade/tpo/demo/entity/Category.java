@@ -30,6 +30,7 @@ public class Category {
     @Column(name = "slug")
     private String slug;
 
+    @Builder.Default
     @Column(name = "is_active")
     private boolean isActive = true;
 }

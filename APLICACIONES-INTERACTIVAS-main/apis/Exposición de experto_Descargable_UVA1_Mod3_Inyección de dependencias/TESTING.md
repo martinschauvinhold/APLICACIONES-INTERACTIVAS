@@ -82,11 +82,34 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 10 | GET | `/categories` | Token (¿debería ser público?) | ❌ falta header | | |
-| 11 | GET | `/categories/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 12 | POST | `/categories` | admin | ✅ | | |
-| 13 | PUT | `/categories/{id}` | admin | ✅ | | |
-| 14 | DELETE | `/categories/{id}` | admin | ✅ | | |
+| 10 | GET | `/categories` | Token | ❌ falta header | ✅ OK | 200 + lista |
+| 10b | GET | `/categories` | Sin token | — | ✅ OK | 401 |
+| 11 | GET | `/categories/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 |
+| 11b | GET | `/categories/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
+| 11c | GET | `/categories/{id}` | Sin token | — | ✅ OK | 401 |
+| 12 | POST | `/categories` | admin | ✅ | ✅ OK | 201 |
+| 12b | POST | `/categories` | admin + descripción duplicada | — | ✅ OK | 409 `Category con description 'X' ya existe` |
+| 12c | POST | `/categories` | Sin token | — | ✅ OK | 401 |
+| 12d | POST | `/categories` | buyer | — | ✅ OK | 403 |
+| 12e | POST | `/categories` | seller | — | ✅ OK | 403 |
+| 12f | POST | `/categories` | admin + body `{}` (description null) | — | ✅ OK | 400 `description: must not be blank` |
+| 13 | PUT | `/categories/{id}` | admin | ✅ | ✅ OK | 200 |
+| 13b | PUT | `/categories/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 13c | PUT | `/categories/{id}` | Sin token | — | ✅ OK | 401 |
+| 13d | PUT | `/categories/{id}` | buyer | — | ✅ OK | 403 |
+| 13e | PUT | `/categories/{id}` | admin + descripción de otra cat. | — | ✅ OK | 409 — duplicate check agregado en update |
+| 14 | DELETE | `/categories/{id}` | admin + sin productos | ✅ | ✅ OK | 204 |
+| 14b | DELETE | `/categories/{id}` | admin + con productos asociados | — | ✅ OK | 422 `No se puede eliminar la categoría porque tiene productos asociados` |
+| 14c | DELETE | `/categories/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 14d | DELETE | `/categories/{id}` | Sin token | — | ✅ OK | 401 |
+| 14e | DELETE | `/categories/{id}` | buyer | — | ✅ OK | 403 |
+| 14f | PATCH | `/categories/{id}/deactivate` | admin | — | ✅ OK | 200 + `active: false` — soft delete para cats con productos |
+| 14g | PATCH | `/categories/{id}/deactivate` | admin + ID inexistente | — | ✅ OK | 404 |
+| 14h | PATCH | `/categories/{id}/deactivate` | Sin token | — | ✅ OK | 401 |
+| 14i | PATCH | `/categories/{id}/deactivate` | buyer | — | ✅ OK | 403 |
+| 14j | PATCH | `/categories/{id}/deactivate` | seller | — | ✅ OK | 403 |
+| 10c | GET | `/categories` | admin | — | ✅ OK | ve todas (activas + inactivas) |
+| 10d | GET | `/categories` | buyer / seller | — | ✅ OK | solo activas — 3 categorías visibles tras UPDATE manual de data preexistente |
 
 ---
 
@@ -344,3 +367,9 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 6 | **BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`. | El `JwtAuthFilter` valida `sessionRepository.existsByUserEmail(email)` además del JWT. El token del register no funciona en ningún endpoint autenticado — el usuario tiene que hacer login después. | |
 | 7 | ~~**COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente.~~ | ✅ **RESUELTO** — cambiado `noContent()` → `notFound()` en `UsersController.java` y `ProductsController.java`. | |
 | 8 | ~~**BUG**: `POST /products` sin `@Valid` ni validaciones → 500 con name null.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ProductsController`, `@NotBlank` en `name` y `@Positive` en `categoryId` en `ProductRequest`. | |
+| 9 | ~~**BUG**: `GET /categories/{id}` devuelve 204 para ID inexistente.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `CategoriesController`. | |
+| 10 | ~~**BUG**: `POST /categories` duplicado → 500.~~ | ✅ **RESUELTO** — reemplazado `CategoryDuplicateException` por `DuplicateException` (409) en `CategoryServiceImpl`. | |
+| 11 | ~~**BUG**: `POST /categories` body vacío → 201 con description null.~~ | ✅ **RESUELTO** — `@NotBlank` en `CategoryRequest.description` + `@Valid` en controller. | |
+| 12 | ~~**BUG**: `PUT /categories/{id}` no valida duplicados.~~ | ✅ **RESUELTO** — `updateCategory` ahora verifica con `findByDescription` antes de guardar. | |
+| 13 | ~~**BUG**: `DELETE /categories/{id}` con productos → 500.~~ | ✅ **RESUELTO** — `deleteCategory` verifica `productRepository.existsByCategory_Id` y lanza `BusinessRuleException` (422). Se agregó además `PATCH /categories/{id}/deactivate` para soft delete. | |
+| 14 | ~~**COMPORTAMIENTO**: Categorías nuevas con `active: false`.~~ | ✅ **RESUELTO** — `@Builder.Default` agregado en `Category.java`. Data preexistente corregida con `UPDATE categories SET is_active = 1`. | |
