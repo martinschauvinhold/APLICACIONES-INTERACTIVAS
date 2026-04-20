@@ -53,12 +53,28 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 4 | GET | `/users` | admin | ✅ | | |
-| 5 | GET | `/users/{id}` | admin | ✅ | | |
-| 6 | GET | `/users/me` | Token | ✅ | | Verificar que `passwordHash` no aparezca en la respuesta |
-| 7 | POST | `/users` | admin | ✅ | | Probar con `role: "seller"` y `role: "admin"` |
-| 8 | PUT | `/users/{id}` | admin | ✅ | | |
-| 9 | DELETE | `/users/{id}` | admin | ✅ | | |
+| 4 | GET | `/users` | admin | ✅ | ✅ OK | 200 + lista sin passwordHash |
+| 4b | GET | `/users` | Sin token | ✅ | ✅ OK | 401 |
+| 4c | GET | `/users` | buyer | ✅ | ✅ OK | 403 |
+| 5 | GET | `/users/{id}` | admin | ✅ | ✅ OK | 200 con usuario existente |
+| 5b | GET | `/users/{id}` | admin | ✅ | ⚠️ | ID inexistente → 204 en vez de 404 (inconsistente con PUT) |
+| 5c | GET | `/users/{id}` | Sin token | ✅ | ✅ OK | 401 |
+| 6 | GET | `/users/me` | buyer | ✅ | ✅ OK | 200, sin passwordHash ✅ |
+| 6b | GET | `/users/me` | admin | ✅ | ✅ OK | 200, sin passwordHash ✅ |
+| 6c | GET | `/users/me` | Sin token | ✅ | ✅ OK | 401 |
+| 7 | POST | `/users` | admin + role seller | ✅ | ✅ OK | 201, sin passwordHash |
+| 7b | POST | `/users` | admin + role admin | ✅ | ✅ OK | 201 |
+| 7c | POST | `/users` | Sin token | ✅ | ✅ OK | 401 |
+| 7d | POST | `/users` | buyer | ✅ | ✅ OK | 403 |
+| 7e | POST | `/users` | admin + email inválido | ✅ | ✅ OK | 400 `email: must be a well-formed email address` |
+| 8 | PUT | `/users/{id}` | admin | ✅ | ✅ OK | 200 con datos actualizados |
+| 8b | PUT | `/users/{id}` | admin + ID inexistente | ✅ | ✅ OK | 404 |
+| 8c | PUT | `/users/{id}` | Sin token | ✅ | ✅ OK | 401 |
+| 8d | PUT | `/users/{id}` | buyer | ✅ | ✅ OK | 403 |
+| 9 | DELETE | `/users/{id}` | admin | ✅ | ✅ OK | 204 sin body |
+| 9b | DELETE | `/users/{id}` | admin + ID inexistente | ✅ | ✅ OK | 404 |
+| 9c | DELETE | `/users/{id}` | Sin token | ✅ | ✅ OK | 401 |
+| 9d | DELETE | `/users/{id}` | buyer | ✅ | ✅ OK | 403 |
 
 ---
 
@@ -78,11 +94,29 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 15 | GET | `/products` | Token (¿debería ser público?) | ❌ falta header | | |
-| 16 | GET | `/products/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 17 | POST | `/products` | seller o admin | ❌ falta header | | |
-| 18 | PUT | `/products/{id}` | seller o admin | ❌ falta header | | |
-| 19 | DELETE | `/products/{id}` | admin | ❌ falta header | | |
+| 15 | GET | `/products` | Token | ❌ falta header | ✅ OK | 200 + lista |
+| 15b | GET | `/products` | Sin token | — | ✅ OK | 401 |
+| 16 | GET | `/products/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 |
+| 16b | GET | `/products/{id}` | Token + ID inexistente | — | ⚠️ | 204 en vez de 404 (mismo bug que `/users/{id}`) |
+| 16c | GET | `/products/{id}` | Sin token | — | ✅ OK | 401 |
+| 17 | POST | `/products` | admin | ❌ falta header | ✅ OK | 201 |
+| 17b | POST | `/products` | seller | ❌ falta header | ✅ OK | 201 |
+| 17c | POST | `/products` | Sin token | — | ✅ OK | 401 |
+| 17d | POST | `/products` | buyer | — | ✅ OK | 403 |
+| 17e | POST | `/products` | admin + categoryId inexistente | — | ✅ OK | 404 `Category con id 9999 no encontrado` |
+| 17f | POST | `/products` | admin + body vacío `{}` | — | ⚠️ | 404 `Category con id 0 no encontrado` — categoryId defaultea a 0 (int), falta `@NotNull` en DTO |
+| 17g | POST | `/products` | admin + categoryId válido + name null | — | ❌ BUG | 500 — name es NOT NULL en DB pero no hay validación en DTO; falta `@Valid` + `@NotBlank` en `ProductRequest` |
+| 18 | PUT | `/products/{id}` | admin | ❌ falta header | ✅ OK | 200 con datos actualizados |
+| 18b | PUT | `/products/{id}` | seller | ❌ falta header | ✅ OK | 200 |
+| 18c | PUT | `/products/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 18d | PUT | `/products/{id}` | admin + categoryId inexistente | — | ✅ OK | 404 |
+| 18e | PUT | `/products/{id}` | Sin token | — | ✅ OK | 401 |
+| 18f | PUT | `/products/{id}` | buyer | — | ✅ OK | 403 |
+| 19 | DELETE | `/products/{id}` | admin | ❌ falta header | ✅ OK | 204 |
+| 19b | DELETE | `/products/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 19c | DELETE | `/products/{id}` | seller (solo admin puede) | — | ✅ OK | 403 |
+| 19d | DELETE | `/products/{id}` | Sin token | — | ✅ OK | 401 |
+| 19e | DELETE | `/products/{id}` | buyer | — | ✅ OK | 403 |
 
 ---
 
@@ -307,3 +341,6 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 3 | ¿El logout debe invalidar solo la sesión actual o todas las sesiones del usuario? | El código actual (`sessionRepository::deleteByUser`) borra todas las sesiones al hacer logout desde cualquier dispositivo. Si el usuario está logueado desde el celular y la PC, al cerrar sesión desde uno se cierra en ambos. | |
 | 4 | ¿Los límites de rate limiting son adecuados? | Actualmente: 10 req/min para `/auth/*`, 100 req/min para el resto (por IP). ¿Son valores razonables para el proyecto? | |
 | 5 | ¿Cómo se crea el primer admin en un ambiente nuevo? | No hay endpoint público para esto. Se definió que hay que hacer un INSERT directo en la DB con un hash BCrypt. ¿Se documenta el hash de una contraseña de ejemplo para simplificar el setup inicial? | |
+| 6 | **BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`. | El `JwtAuthFilter` valida `sessionRepository.existsByUserEmail(email)` además del JWT. El token del register no funciona en ningún endpoint autenticado — el usuario tiene que hacer login después. | |
+| 7 | **COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente, pero los PUT/DELETE correspondientes devuelven 404. | Los controllers de GET usan `.orElseGet(() -> ResponseEntity.noContent().build())` en vez de `notFound()`. Afecta a `UsersController.java:46` y `ProductsController.java:38`. Sería más correcto y consistente devolver 404. | |
+| 8 | **BUG**: `POST /products` y `PUT /products` no tienen `@Valid` ni validaciones en `ProductRequest`. Mandar body con `categoryId` válido y `name` null → **500** por violación NOT NULL en DB. | `ProductRequest` carece de `@NotBlank` en `name` y `@NotNull` en `categoryId`. Habría que agregar `@Valid` en el controller y anotaciones de validación en el DTO. | |
