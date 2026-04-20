@@ -175,12 +175,31 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 26 | GET | `/inventory` | seller o admin | ❌ falta header | | |
-| 27 | GET | `/inventory/{id}` | seller o admin | ❌ falta header | | |
-| 28 | GET | `/inventory/variant/{variantId}` | seller o admin | ❌ falta header | | |
-| 29 | POST | `/inventory` | seller o admin | ❌ falta header | | |
-| 30 | PUT | `/inventory/{id}` | seller o admin | ❌ falta header | | |
-| 31 | DELETE | `/inventory/{id}` | seller o admin | ❌ falta header | | |
+| 26 | GET | `/inventory` | seller o admin | ❌ falta header | ✅ OK | 200 + lista (seller y admin) |
+| 26b | GET | `/inventory` | Sin token | — | ✅ OK | 401 |
+| 26c | GET | `/inventory` | buyer | — | ✅ OK | 403 |
+| 27 | GET | `/inventory/{id}` | seller + ID existente | ❌ falta header | ✅ OK | 200 con item |
+| 27b | GET | `/inventory/{id}` | Sin token | — | ✅ OK | 401 |
+| 27c | GET | `/inventory/{id}` | buyer | — | ✅ OK | 403 |
+| 27d | GET | `/inventory/{id}` | seller + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 28 | GET | `/inventory/variant/{variantId}` | seller + variantId existente | ❌ falta header | ✅ OK | 200 + lista de inventarios |
+| 28b | GET | `/inventory/variant/{variantId}` | Sin token | — | ✅ OK | 401 |
+| 28c | GET | `/inventory/variant/{variantId}` | buyer | — | ✅ OK | 403 |
+| 28d | GET | `/inventory/variant/{variantId}` | seller + variantId inexistente | — | ✅ OK | 404 `ProductVariant con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del variant antes de buscar |
+| 29 | POST | `/inventory` | seller | ❌ falta header | ✅ OK | 201 + item creado |
+| 29b | POST | `/inventory` | admin | — | ✅ OK | 201 + item creado |
+| 29c | POST | `/inventory` | Sin token | — | ✅ OK | 401 |
+| 29d | POST | `/inventory` | buyer | — | ✅ OK | 403 |
+| 29e | POST | `/inventory` | seller + variantId inexistente | — | ✅ OK | 404 `ProductVariant con id 9999 no encontrado` |
+| 29f | POST | `/inventory` | seller + warehouseId inexistente | — | ✅ OK | 404 `Warehouse con id 9999 no encontrado` |
+| 30 | PUT | `/inventory/{id}` | seller + ID existente | ❌ falta header | ✅ OK | 200 con stock actualizado |
+| 30b | PUT | `/inventory/{id}` | Sin token | — | ✅ OK | 401 |
+| 30c | PUT | `/inventory/{id}` | buyer | — | ✅ OK | 403 |
+| 30d | PUT | `/inventory/{id}` | seller + ID inexistente | — | ✅ OK | 404 |
+| 31 | DELETE | `/inventory/{id}` | seller + ID existente | ❌ falta header | ✅ OK | 204 sin body |
+| 31b | DELETE | `/inventory/{id}` | Sin token | — | ✅ OK | 401 |
+| 31c | DELETE | `/inventory/{id}` | buyer | — | ✅ OK | 403 |
+| 31d | DELETE | `/inventory/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
 
 ---
 
@@ -390,4 +409,6 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 14 | ~~**COMPORTAMIENTO**: Categorías nuevas con `active: false`.~~ | ✅ **RESUELTO** — `@Builder.Default` agregado en `Category.java`. Data preexistente corregida con `UPDATE categories SET is_active = 1`. | |
 | 15 | ~~**BUG**: `GET /variants/{id}` con ID inexistente devolvía 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `ProductVariantsController`. | |
 | 16 | ~~**BUG**: `POST /variants` con `productId` inexistente devolvía 500.~~ | ✅ **RESUELTO** — `RuntimeException` → `NotFoundException` en `ProductVariantServiceImpl.createVariant` y `updateVariant`. | |
-| 17 | ~~**COMPORTAMIENTO**: `GET /variants/product/{productId}` con productId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getVariantsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. | |
+| 17 | ~~**COMPORTAMIENTO**: `GET /variants/product/{productId}` con productId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getVariantsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. |
+| 18 | ~~**BUG**: `GET /inventory/{id}` con ID inexistente devolvía 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `InventoryController`. |
+| 19 | ~~**COMPORTAMIENTO**: `GET /inventory/variant/{variantId}` con variantId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getInventoryByVariant` ahora verifica `productVariantRepository.existsById` y lanza `NotFoundException` (404) si la variante no existe. | |

@@ -37,7 +37,7 @@ public class InventoryController {
     @GetMapping("/{inventoryId}")
     public ResponseEntity<Inventory> getInventoryById(@PathVariable int inventoryId) {
         Optional<Inventory> result = inventoryService.getInventoryById(inventoryId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/variant/{variantId}")

@@ -85,6 +85,7 @@ class InventoryServiceTest {
         // Arrange
         var variant = ProductVariant.builder().id(3).build();
         var items = List.of(Inventory.builder().id(1).variant(variant).stockQuantity(100).build());
+        when(productVariantRepository.existsById(3)).thenReturn(true);
         when(inventoryRepository.findByVariantId(3)).thenReturn(items);
 
         // Act
@@ -92,6 +93,17 @@ class InventoryServiceTest {
 
         // Assert
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getInventoryByVariant_deberiaLanzarNotFoundException_cuandoVariantNoExiste() {
+        // Arrange
+        when(productVariantRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> inventoryService.getInventoryByVariant(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
