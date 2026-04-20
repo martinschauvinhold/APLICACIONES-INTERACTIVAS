@@ -262,7 +262,7 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 | 54c | GET | `/payments` | buyer | — | ✅ OK | 403 |
 | 54d | GET | `/payments` | seller | — | ✅ OK | 403 |
 | 55 | GET | `/payments/{id}` | buyer + ID existente | ✅ | ✅ OK | 200 con payment |
-| 55b | GET | `/payments/{id}` | buyer + ID inexistente | — | ❌ Falla | 204 en vez de 404 — **bug**: `noContent()` → `notFound()` en controller |
+| 55b | GET | `/payments/{id}` | buyer + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
 | 55c | GET | `/payments/{id}` | Sin token | — | ✅ OK | 401 |
 | 55d | GET | `/payments/{id}` | seller | — | ✅ OK | 403 |
 | 56 | GET | `/payments/order/{orderId}` | buyer + orderId existente | ✅ | ✅ OK | 200 + lista de pagos |
