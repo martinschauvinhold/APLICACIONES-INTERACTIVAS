@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,12 +36,12 @@ public class ProductsController {
     @GetMapping("/{productId}")
     public ResponseEntity<Product> getProductById(@PathVariable int productId) {
         Optional<Product> result = productService.getProductById(productId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createProduct(@RequestBody ProductRequest productRequest) {
+    public ResponseEntity<Object> createProduct(@Valid @RequestBody ProductRequest productRequest) {
         Product result = productService.createProduct(productRequest);
         return ResponseEntity.created(URI.create("/products/" + result.getId())).body(result);
     }
@@ -48,7 +49,7 @@ public class ProductsController {
     @PutMapping("/{productId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateProduct(@PathVariable int productId,
-            @RequestBody ProductRequest productRequest) {
+            @Valid @RequestBody ProductRequest productRequest) {
         Optional<Product> result = productService.getProductById(productId);
         if (result.isPresent()) {
             Product updated = productService.updateProduct(productId, productRequest);

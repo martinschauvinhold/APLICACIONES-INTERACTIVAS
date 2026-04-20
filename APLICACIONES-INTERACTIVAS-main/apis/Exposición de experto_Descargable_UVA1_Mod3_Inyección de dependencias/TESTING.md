@@ -57,7 +57,7 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 | 4b | GET | `/users` | Sin token | ✅ | ✅ OK | 401 |
 | 4c | GET | `/users` | buyer | ✅ | ✅ OK | 403 |
 | 5 | GET | `/users/{id}` | admin | ✅ | ✅ OK | 200 con usuario existente |
-| 5b | GET | `/users/{id}` | admin | ✅ | ⚠️ | ID inexistente → 204 en vez de 404 (inconsistente con PUT) |
+| 5b | GET | `/users/{id}` | admin | ✅ | ✅ OK | ID inexistente → 404 |
 | 5c | GET | `/users/{id}` | Sin token | ✅ | ✅ OK | 401 |
 | 6 | GET | `/users/me` | buyer | ✅ | ✅ OK | 200, sin passwordHash ✅ |
 | 6b | GET | `/users/me` | admin | ✅ | ✅ OK | 200, sin passwordHash ✅ |
@@ -97,15 +97,15 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 | 15 | GET | `/products` | Token | ❌ falta header | ✅ OK | 200 + lista |
 | 15b | GET | `/products` | Sin token | — | ✅ OK | 401 |
 | 16 | GET | `/products/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 |
-| 16b | GET | `/products/{id}` | Token + ID inexistente | — | ⚠️ | 204 en vez de 404 (mismo bug que `/users/{id}`) |
+| 16b | GET | `/products/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
 | 16c | GET | `/products/{id}` | Sin token | — | ✅ OK | 401 |
 | 17 | POST | `/products` | admin | ❌ falta header | ✅ OK | 201 |
 | 17b | POST | `/products` | seller | ❌ falta header | ✅ OK | 201 |
 | 17c | POST | `/products` | Sin token | — | ✅ OK | 401 |
 | 17d | POST | `/products` | buyer | — | ✅ OK | 403 |
 | 17e | POST | `/products` | admin + categoryId inexistente | — | ✅ OK | 404 `Category con id 9999 no encontrado` |
-| 17f | POST | `/products` | admin + body vacío `{}` | — | ⚠️ | 404 `Category con id 0 no encontrado` — categoryId defaultea a 0 (int), falta `@NotNull` en DTO |
-| 17g | POST | `/products` | admin + categoryId válido + name null | — | ❌ BUG | 500 — name es NOT NULL en DB pero no hay validación en DTO; falta `@Valid` + `@NotBlank` en `ProductRequest` |
+| 17f | POST | `/products` | admin + body vacío `{}` | — | ✅ OK | 400 `categoryId: must be greater than 0, name: must not be blank` |
+| 17g | POST | `/products` | admin + categoryId válido + name null | — | ✅ OK | 400 `name: must not be blank` |
 | 18 | PUT | `/products/{id}` | admin | ❌ falta header | ✅ OK | 200 con datos actualizados |
 | 18b | PUT | `/products/{id}` | seller | ❌ falta header | ✅ OK | 200 |
 | 18c | PUT | `/products/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
@@ -342,5 +342,5 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 4 | ¿Los límites de rate limiting son adecuados? | Actualmente: 10 req/min para `/auth/*`, 100 req/min para el resto (por IP). ¿Son valores razonables para el proyecto? | |
 | 5 | ¿Cómo se crea el primer admin en un ambiente nuevo? | No hay endpoint público para esto. Se definió que hay que hacer un INSERT directo en la DB con un hash BCrypt. ¿Se documenta el hash de una contraseña de ejemplo para simplificar el setup inicial? | |
 | 6 | **BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`. | El `JwtAuthFilter` valida `sessionRepository.existsByUserEmail(email)` además del JWT. El token del register no funciona en ningún endpoint autenticado — el usuario tiene que hacer login después. | |
-| 7 | **COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente, pero los PUT/DELETE correspondientes devuelven 404. | Los controllers de GET usan `.orElseGet(() -> ResponseEntity.noContent().build())` en vez de `notFound()`. Afecta a `UsersController.java:46` y `ProductsController.java:38`. Sería más correcto y consistente devolver 404. | |
-| 8 | **BUG**: `POST /products` y `PUT /products` no tienen `@Valid` ni validaciones en `ProductRequest`. Mandar body con `categoryId` válido y `name` null → **500** por violación NOT NULL en DB. | `ProductRequest` carece de `@NotBlank` en `name` y `@NotNull` en `categoryId`. Habría que agregar `@Valid` en el controller y anotaciones de validación en el DTO. | |
+| 7 | ~~**COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente.~~ | ✅ **RESUELTO** — cambiado `noContent()` → `notFound()` en `UsersController.java` y `ProductsController.java`. | |
+| 8 | ~~**BUG**: `POST /products` sin `@Valid` ni validaciones → 500 con name null.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ProductsController`, `@NotBlank` en `name` y `@Positive` en `categoryId` en `ProductRequest`. | |

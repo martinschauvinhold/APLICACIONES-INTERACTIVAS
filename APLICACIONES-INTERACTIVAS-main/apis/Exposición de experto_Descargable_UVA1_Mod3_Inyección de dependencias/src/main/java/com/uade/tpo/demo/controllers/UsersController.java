@@ -43,7 +43,7 @@ public class UsersController {
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<User> getUserById(@PathVariable int userId) {
         Optional<User> result = userService.getUserById(userId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/me")
