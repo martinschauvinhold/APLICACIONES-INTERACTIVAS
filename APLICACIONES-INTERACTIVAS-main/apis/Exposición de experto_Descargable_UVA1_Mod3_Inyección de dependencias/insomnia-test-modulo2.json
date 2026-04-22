@@ -1,0 +1,530 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-12T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app",
+  "resources": [
+    {
+      "_id": "wrk_ecommerce",
+      "_type": "workspace",
+      "name": "E-Commerce API - Flujo completo de pedido",
+      "description": "Flujo: Categoria > Usuario > Direccion > Producto > Variante > Orden > Item > Pago > Entrega"
+    },
+
+    {
+      "_id": "fld_01_setup",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "01 - Setup (Categoria + Usuario + Direccion)"
+    },
+    {
+      "_id": "fld_02_catalogo",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "02 - Catalogo (Producto + Variante)"
+    },
+    {
+      "_id": "fld_03_orden",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "03 - Orden"
+    },
+    {
+      "_id": "fld_04_pago",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "04 - Pago"
+    },
+    {
+      "_id": "fld_05_entrega",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "05 - Entrega"
+    },
+    {
+      "_id": "fld_06_consultas",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "06 - Consultas"
+    },
+
+    {
+      "_id": "req_01_create_category",
+      "_type": "request",
+      "parentId": "fld_01_setup",
+      "name": "1. Crear categoria",
+      "method": "POST",
+      "url": "http://localhost:8080/categories",
+      "description": "Primero crear la categoria que va a usar el producto",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"description\": \"Indumentaria\"\n}"
+      }
+    },
+    {
+      "_id": "req_02_create_user",
+      "_type": "request",
+      "parentId": "fld_01_setup",
+      "name": "2. Crear usuario (buyer)",
+      "method": "POST",
+      "url": "http://localhost:8080/users",
+      "description": "Crear el usuario comprador. role debe ser: buyer, seller o admin",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"martin123\",\n  \"email\": \"martin@mail.com\",\n  \"passwordHash\": \"1234\",\n  \"firstName\": \"Martin\",\n  \"lastName\": \"Garcia\",\n  \"role\": \"buyer\",\n  \"phone\": \"1155667788\"\n}"
+      }
+    },
+    {
+      "_id": "req_03_create_address",
+      "_type": "request",
+      "parentId": "fld_01_setup",
+      "name": "3. Crear direccion (reemplazar userId)",
+      "method": "POST",
+      "url": "http://localhost:8080/addresses",
+      "description": "Reemplazar userId con el id devuelto al crear el usuario",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"street\": \"Av. Corrientes 1234\",\n  \"city\": \"Buenos Aires\",\n  \"state\": \"CABA\",\n  \"zipCode\": \"1043\",\n  \"referenceNote\": \"Piso 3 depto B\"\n}"
+      }
+    },
+    {
+      "_id": "req_04_get_addresses",
+      "_type": "request",
+      "parentId": "fld_01_setup",
+      "name": "4. Ver direcciones del usuario",
+      "method": "GET",
+      "url": "http://localhost:8080/addresses/user/1",
+      "description": "Reemplazar 1 con el userId. Necesitas el addressId para crear la orden"
+    },
+
+    {
+      "_id": "req_05_create_product",
+      "_type": "request",
+      "parentId": "fld_02_catalogo",
+      "name": "5. Crear producto (reemplazar categoryId)",
+      "method": "POST",
+      "url": "http://localhost:8080/products",
+      "description": "Reemplazar categoryId con el id devuelto al crear la categoria",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Remera basica\",\n  \"description\": \"Remera de algodon 100%\",\n  \"brand\": \"Nike\",\n  \"categoryId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_06_create_variant",
+      "_type": "request",
+      "parentId": "fld_02_catalogo",
+      "name": "6. Crear variante (reemplazar productId)",
+      "method": "POST",
+      "url": "http://localhost:8080/variants",
+      "description": "Reemplazar productId con el id devuelto al crear el producto. El precio vive en la variante.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"sku\": \"REM-NIKE-M-AZ\",\n  \"attributes\": \"{\\\"talle\\\": \\\"M\\\", \\\"color\\\": \\\"azul\\\"}\",\n  \"basePrice\": 9500.00\n}"
+      }
+    },
+    {
+      "_id": "req_07_get_variants",
+      "_type": "request",
+      "parentId": "fld_02_catalogo",
+      "name": "7. Ver variantes del producto",
+      "method": "GET",
+      "url": "http://localhost:8080/variants/product/1",
+      "description": "Reemplazar 1 con el productId. Necesitas el variantId para crear el item de la orden"
+    },
+
+    {
+      "_id": "req_08_create_order",
+      "_type": "request",
+      "parentId": "fld_03_orden",
+      "name": "8. Crear orden (reemplazar userId y shippingAddressId)",
+      "method": "POST",
+      "url": "http://localhost:8080/orders",
+      "description": "Reemplazar userId y shippingAddressId con los ids obtenidos en el setup",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"pending\"\n}"
+      }
+    },
+    {
+      "_id": "req_09_get_order",
+      "_type": "request",
+      "parentId": "fld_03_orden",
+      "name": "9. Ver orden creada",
+      "method": "GET",
+      "url": "http://localhost:8080/orders/1",
+      "description": "Reemplazar 1 con el orderId devuelto al crear la orden"
+    },
+    {
+      "_id": "req_09b_add_item",
+      "_type": "request",
+      "parentId": "fld_03_orden",
+      "name": "9b. Agregar item a la orden (reemplazar orderId y variantId)",
+      "method": "POST",
+      "url": "http://localhost:8080/order-items",
+      "description": "El precio se toma automaticamente del basePrice de la variante. Se puede llamar varias veces para agregar mas items.",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"variantId\": 1,\n  \"quantity\": 2\n}"
+      }
+    },
+    {
+      "_id": "req_09c_get_items",
+      "_type": "request",
+      "parentId": "fld_03_orden",
+      "name": "9c. Ver items de la orden",
+      "method": "GET",
+      "url": "http://localhost:8080/order-items/order/1",
+      "description": "Reemplazar 1 con el orderId. Verifica que totalAmount se haya calculado en la orden."
+    },
+
+    {
+      "_id": "req_10_create_payment",
+      "_type": "request",
+      "parentId": "fld_04_pago",
+      "name": "10. Registrar pago (reemplazar orderId)",
+      "method": "POST",
+      "url": "http://localhost:8080/payments",
+      "description": "Reemplazar orderId con el id de la orden creada",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"credit_card\",\n  \"transactionId\": \"TXN-20260412-001\",\n  \"paymentStatus\": \"approved\"\n}"
+      }
+    },
+    {
+      "_id": "req_11_update_order_paid",
+      "_type": "request",
+      "parentId": "fld_04_pago",
+      "name": "11. Actualizar estado de orden a pagada",
+      "method": "PUT",
+      "url": "http://localhost:8080/orders/1",
+      "description": "Reemplazar 1 con el orderId. Actualizar el status una vez confirmado el pago",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"paid\"\n}"
+      }
+    },
+    {
+      "_id": "req_12_get_payments_order",
+      "_type": "request",
+      "parentId": "fld_04_pago",
+      "name": "12. Ver pagos de la orden",
+      "method": "GET",
+      "url": "http://localhost:8080/payments/order/1",
+      "description": "Reemplazar 1 con el orderId"
+    },
+
+    {
+      "_id": "req_13_create_delivery",
+      "_type": "request",
+      "parentId": "fld_05_entrega",
+      "name": "13. Crear entrega (reemplazar orderId)",
+      "method": "POST",
+      "url": "http://localhost:8080/deliveries",
+      "description": "Reemplazar orderId con el id de la orden",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"shippingMethod\": \"correo_argentino\",\n  \"trackingNumber\": \"CA-20260412-001\",\n  \"deliveryStatus\": \"dispatched\"\n}"
+      }
+    },
+    {
+      "_id": "req_14_update_order_shipped",
+      "_type": "request",
+      "parentId": "fld_05_entrega",
+      "name": "14. Actualizar estado de orden a enviada",
+      "method": "PUT",
+      "url": "http://localhost:8080/orders/1",
+      "description": "Reemplazar 1 con el orderId",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"shipped\"\n}"
+      }
+    },
+    {
+      "_id": "req_15_update_delivery_delivered",
+      "_type": "request",
+      "parentId": "fld_05_entrega",
+      "name": "15. Actualizar entrega a entregada",
+      "method": "PUT",
+      "url": "http://localhost:8080/deliveries/1",
+      "description": "Reemplazar 1 con el deliveryId devuelto al crear la entrega",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"orderId\": 1,\n  \"shippingMethod\": \"correo_argentino\",\n  \"trackingNumber\": \"CA-20260412-001\",\n  \"deliveryStatus\": \"delivered\"\n}"
+      }
+    },
+    {
+      "_id": "req_16_update_order_delivered",
+      "_type": "request",
+      "parentId": "fld_05_entrega",
+      "name": "16. Actualizar estado de orden a completada",
+      "method": "PUT",
+      "url": "http://localhost:8080/orders/1",
+      "description": "Reemplazar 1 con el orderId",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"delivered\"\n}"
+      }
+    },
+
+    {
+      "_id": "req_17_get_all_orders",
+      "_type": "request",
+      "parentId": "fld_06_consultas",
+      "name": "Ver todas las ordenes",
+      "method": "GET",
+      "url": "http://localhost:8080/orders"
+    },
+    {
+      "_id": "req_18_get_orders_by_user",
+      "_type": "request",
+      "parentId": "fld_06_consultas",
+      "name": "Ver ordenes del usuario",
+      "method": "GET",
+      "url": "http://localhost:8080/orders/user/1",
+      "description": "Reemplazar 1 con el userId"
+    },
+    {
+      "_id": "req_19_get_deliveries_order",
+      "_type": "request",
+      "parentId": "fld_06_consultas",
+      "name": "Ver entregas de la orden",
+      "method": "GET",
+      "url": "http://localhost:8080/deliveries/order/1",
+      "description": "Reemplazar 1 con el orderId"
+    },
+    {
+      "_id": "req_20_get_all_products",
+      "_type": "request",
+      "parentId": "fld_06_consultas",
+      "name": "Ver todos los productos",
+      "method": "GET",
+      "url": "http://localhost:8080/products"
+    },
+    {
+      "_id": "req_21_get_all_users",
+      "_type": "request",
+      "parentId": "fld_06_consultas",
+      "name": "Ver todos los usuarios",
+      "method": "GET",
+      "url": "http://localhost:8080/users"
+    },
+
+    {
+      "_id": "fld_07_modulo2",
+      "_type": "request_group",
+      "parentId": "wrk_ecommerce",
+      "name": "07 - Test Modulo 2 (Catalogo completo)"
+    },
+
+    {
+      "_id": "req_m2_01",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "1. Crear usuario seller",
+      "method": "POST",
+      "url": "http://localhost:8080/users",
+      "description": "Necesario para crear productos. Guardar el userId devuelto.",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"seller1\",\n  \"email\": \"seller@mail.com\",\n  \"passwordHash\": \"1234\",\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Lopez\",\n  \"role\": \"seller\",\n  \"phone\": \"1155667788\"\n}"
+      }
+    },
+    {
+      "_id": "req_m2_02",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "2. Crear producto (reemplazar categoryId y sellerId)",
+      "method": "POST",
+      "url": "http://localhost:8080/products",
+      "description": "Solo seller o admin pueden crear productos. Guardar el productId devuelto.",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Remera basica\",\n  \"description\": \"Algodon 100%\",\n  \"brand\": \"Nike\",\n  \"categoryId\": 1,\n  \"sellerId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_m2_03",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "3. Crear variante con precio (reemplazar productId)",
+      "method": "POST",
+      "url": "http://localhost:8080/variants",
+      "description": "El basePrice es el precio minorista. Guardar el variantId devuelto.",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"sku\": \"REM-NIKE-M-AZ\",\n  \"attributes\": \"{\\\"talle\\\": \\\"M\\\"}\",\n  \"basePrice\": 9500.00\n}"
+      }
+    },
+    {
+      "_id": "req_m2_04",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "4. Crear price tier mayorista (reemplazar variantId)",
+      "method": "POST",
+      "url": "http://localhost:8080/price-tiers",
+      "description": "A partir de 10 unidades, el precio baja a 7500.",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"variantId\": 1,\n  \"minQuantity\": 10,\n  \"unitPrice\": 7500.00\n}"
+      }
+    },
+    {
+      "_id": "req_m2_05",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "5. Precio efectivo cantidad baja (debe devolver 9500)",
+      "method": "GET",
+      "url": "http://localhost:8080/price-tiers/variant/1/price?quantity=5",
+      "description": "Con 5 unidades no llega al tier mayorista, devuelve basePrice 9500."
+    },
+    {
+      "_id": "req_m2_06",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "6. Precio efectivo cantidad alta (debe devolver 7500)",
+      "method": "GET",
+      "url": "http://localhost:8080/price-tiers/variant/1/price?quantity=10",
+      "description": "Con 10 unidades aplica el tier mayorista, devuelve 7500."
+    },
+    {
+      "_id": "req_m2_07",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "7. Buscar por marca",
+      "method": "GET",
+      "url": "http://localhost:8080/products/search?brand=Nike"
+    },
+    {
+      "_id": "req_m2_08",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "8. Buscar por categoria",
+      "method": "GET",
+      "url": "http://localhost:8080/products/search?categoryId=1"
+    },
+    {
+      "_id": "req_m2_09",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "9. Buscar por nombre",
+      "method": "GET",
+      "url": "http://localhost:8080/products/search?name=remera"
+    },
+    {
+      "_id": "req_m2_10",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "10. Buscar con multiples filtros",
+      "method": "GET",
+      "url": "http://localhost:8080/products/search?brand=Nike&categoryId=1"
+    },
+    {
+      "_id": "req_m2_11",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "11. Crear imagen de producto (reemplazar productId)",
+      "method": "POST",
+      "url": "http://localhost:8080/product-images",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"url\": \"https://ejemplo.com/remera-nike.jpg\",\n  \"isPrimary\": true,\n  \"sortOrder\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_m2_12",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "12. Ver imagenes del producto",
+      "method": "GET",
+      "url": "http://localhost:8080/product-images/product/1"
+    },
+    {
+      "_id": "req_m2_13",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "13. Crear tag para producto (reemplazar productId)",
+      "method": "POST",
+      "url": "http://localhost:8080/tags",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"productId\": 1,\n  \"name\": \"deportivo\"\n}"
+      }
+    },
+    {
+      "_id": "req_m2_14",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "14. Ver tags del producto",
+      "method": "GET",
+      "url": "http://localhost:8080/tags/product/1"
+    },
+    {
+      "_id": "req_m2_15",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "15. ERROR - Crear producto con buyer (debe dar 400)",
+      "method": "POST",
+      "url": "http://localhost:8080/products",
+      "description": "Usar el userId de un usuario con role buyer. Debe rechazar con error de validacion.",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Producto invalido\",\n  \"description\": \"No deberia crearse\",\n  \"brand\": \"Test\",\n  \"categoryId\": 1,\n  \"sellerId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_m2_16",
+      "_type": "request",
+      "parentId": "fld_07_modulo2",
+      "name": "16. Ver tiers de la variante",
+      "method": "GET",
+      "url": "http://localhost:8080/price-tiers/variant/1"
+    }
+  ]
+}
