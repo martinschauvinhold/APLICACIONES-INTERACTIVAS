@@ -29,7 +29,7 @@ else ifeq ($(DB),mssql)
   DB_NAME         = E-commerce
   SEED_FILE       = seed-users.sql
   SA_PASS         = YourStrong@Passw0rd
-  SQLCMD          = /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$(SA_PASS)' -No
+  SQLCMD          = /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$(SA_PASS)' -No -b
   DB_LABEL        = SQL Server
 else
   $(error DB debe ser 'mssql' o 'mysql', recibí '$(DB)')
@@ -61,6 +61,7 @@ help:
 	@printf "    $(CYAN)make start-db$(RESET)        →  levanta el contenedor y espera que esté listo\n"
 	@printf "    $(CYAN)make init-db$(RESET)         →  crea la base y el usuario (idempotente)\n"
 	@printf "    $(CYAN)make seed-db$(RESET)         →  carga admin + seller de prueba (idempotente)\n"
+	@printf "    $(CYAN)make populate-db$(RESET)     →  carga catálogo, compradores y pedidos de ejemplo (idempotente)\n"
 	@printf "    $(CYAN)make start-app$(RESET)       →  corre la app con el perfil correcto\n"
 	@printf "    $(CYAN)make stop-db$(RESET)         →  baja el contenedor\n"
 	@printf "    $(RED)make wipe-db$(RESET)         →  baja el contenedor y BORRA los datos (volumen)\n\n"
@@ -99,13 +100,14 @@ wipe-db:
 init-db:
 ifeq ($(DB),mssql)
 	@printf "$(CYAN)[  db    ]$(RESET) Inicializando base de datos y usuario (SQL Server)...\n"
-	docker exec -it $(CONTAINER) $(SQLCMD) \
+	docker exec -i $(CONTAINER) $(SQLCMD) \
 		-Q "IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'E-commerce') \
-		    BEGIN CREATE DATABASE [E-commerce] END; \
-		    IF NOT EXISTS (SELECT name FROM sys.server_principals WHERE name = 'appuser') \
-		    BEGIN CREATE LOGIN appuser WITH PASSWORD='App12345!' END; \
-		    USE [E-commerce]; \
-		    IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'appuser') \
+		    BEGIN CREATE DATABASE [E-commerce] END;"
+	docker exec -i $(CONTAINER) $(SQLCMD) \
+		-Q "IF NOT EXISTS (SELECT name FROM sys.server_principals WHERE name = 'appuser') \
+		    BEGIN CREATE LOGIN appuser WITH PASSWORD='App12345!' END;"
+	docker exec -i $(CONTAINER) $(SQLCMD) -d "E-commerce" \
+		-Q "IF NOT EXISTS (SELECT name FROM sys.database_principals WHERE name = 'appuser') \
 		    BEGIN CREATE USER appuser FOR LOGIN appuser END; \
 		    ALTER ROLE db_owner ADD MEMBER appuser;"
 	@printf "$(GREEN)[  db    ]$(RESET) Base [E-commerce] y usuario appuser listos.\n"
@@ -135,6 +137,11 @@ start-app:
 
 .PHONY: start-all
 start-all: start-db init-db start-app
+
+.PHONY: populate-db
+populate-db:
+	@printf "$(CYAN)[  db    ]$(RESET) Populando la base vía API (requiere app corriendo en localhost:8080)...\n"
+	@./populate-db.sh
 
 # ─── Build y tests ────────────────────────────────────────────────────────────
 

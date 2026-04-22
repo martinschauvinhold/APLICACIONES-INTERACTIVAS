@@ -48,6 +48,9 @@
                 "auth",
                 "register"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "event": [
@@ -101,6 +104,9 @@
                 "auth",
                 "login"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "event": [
@@ -130,12 +136,7 @@
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
               "host": [
@@ -403,7 +404,8 @@
                 "categories"
               ]
             }
-          }
+          },
+          "description": "Requiere rol ADMIN."
         },
         {
           "name": "Actualizar categoría",
@@ -560,7 +562,8 @@
                 "warehouses"
               ]
             }
-          }
+          },
+          "description": "Requiere rol ADMIN."
         },
         {
           "name": "Actualizar depósito",
@@ -1420,7 +1423,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"status\": \"PENDING\"\n}",
+              "raw": "{\n  \"userId\": 1,\n  \"shippingAddressId\": 1,\n  \"items\": [\n    { \"variantId\": 1, \"quantity\": 2 }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1747,7 +1750,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"transactionId\": \"TXN-20240101-001\",\n  \"paymentStatus\": \"APPROVED\"\n}",
+              "raw": "{\n  \"orderId\": 1,\n  \"paymentMethod\": \"CREDIT_CARD\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2887,8 +2890,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/discounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts"
+              ]
             }
           }
         },
@@ -2899,10 +2906,18 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/discounts/:discountId",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts", ":discountId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                ":discountId"
+              ],
               "variable": [
-                { "key": "discountId", "value": "1" }
+                {
+                  "key": "discountId",
+                  "value": "1"
+                }
               ]
             }
           }
@@ -2914,10 +2929,19 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/discounts/product/:productId",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts", "product", ":productId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                "product",
+                ":productId"
+              ],
               "variable": [
-                { "key": "productId", "value": "1" }
+                {
+                  "key": "productId",
+                  "value": "1"
+                }
               ]
             }
           }
@@ -2927,17 +2951,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"10% OFF Samsung Galaxy\",\n  \"discountType\": \"PERCENTAGE\",\n  \"value\": 10,\n  \"appliesTo\": \"PRODUCT\",\n  \"productId\": 1,\n  \"minPrice\": null,\n  \"startsAt\": null,\n  \"expiresAt\": \"2025-12-31T23:59:59\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/discounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts"
+              ]
             }
           }
         },
@@ -2946,17 +2981,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"15% OFF Celulares\",\n  \"discountType\": \"PERCENTAGE\",\n  \"value\": 15,\n  \"appliesTo\": \"CATEGORY\",\n  \"categoryId\": 1,\n  \"minPrice\": null,\n  \"startsAt\": null,\n  \"expiresAt\": \"2025-12-31T23:59:59\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/discounts",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts"
+              ]
             }
           }
         },
@@ -2965,19 +3011,34 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"20% OFF Samsung Galaxy\",\n  \"discountType\": \"PERCENTAGE\",\n  \"value\": 20,\n  \"appliesTo\": \"PRODUCT\",\n  \"productId\": 1,\n  \"minPrice\": null,\n  \"startsAt\": null,\n  \"expiresAt\": \"2025-12-31T23:59:59\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/discounts/:discountId",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts", ":discountId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                ":discountId"
+              ],
               "variable": [
-                { "key": "discountId", "value": "1" }
+                {
+                  "key": "discountId",
+                  "value": "1"
+                }
               ]
             }
           }
@@ -2989,10 +3050,18 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/discounts/:discountId",
-              "host": ["{{baseUrl}}"],
-              "path": ["discounts", ":discountId"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "discounts",
+                ":discountId"
+              ],
               "variable": [
-                { "key": "discountId", "value": "1" }
+                {
+                  "key": "discountId",
+                  "value": "1"
+                }
               ]
             }
           }
@@ -3234,5 +3303,15 @@
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
 }
