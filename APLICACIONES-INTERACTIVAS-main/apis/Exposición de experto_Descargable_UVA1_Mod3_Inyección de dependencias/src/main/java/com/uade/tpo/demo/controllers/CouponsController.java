@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,11 +27,13 @@ public class CouponsController {
     private CouponService couponService;
 
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<List<Coupon>> getCoupons() {
         return ResponseEntity.ok(couponService.getCoupons());
     }
 
     @GetMapping("/{couponId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Coupon> getCouponById(@PathVariable int couponId) {
         Optional<Coupon> result = couponService.getCouponById(couponId);
         if (result.isPresent()) {
@@ -40,18 +43,21 @@ public class CouponsController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> createCoupon(@RequestBody CouponRequest request) {
         Coupon result = couponService.createCoupon(request);
         return ResponseEntity.created(URI.create("/coupons/" + result.getId())).body(result);
     }
 
     @DeleteMapping("/{couponId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteCoupon(@PathVariable int couponId) {
         couponService.deleteCoupon(couponId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/validate/{code}")
+    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<Coupon> validateCoupon(@PathVariable String code) {
         Coupon coupon = couponService.validateCoupon(code);
         return ResponseEntity.ok(coupon);
