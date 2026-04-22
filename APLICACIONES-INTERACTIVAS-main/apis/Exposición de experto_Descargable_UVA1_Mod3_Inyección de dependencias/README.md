@@ -41,6 +41,19 @@ Para registrar un usuario `buyer` desde la API: `POST /auth/register` (no requie
 
 ---
 
+## Documentación funcional
+
+Para entender qué hace cada endpoint, qué errores devuelve y cómo funcionan los flujos de negocio (orders + cupones + pagos), ver **[MANUAL.md](MANUAL.md)**.
+
+Cubre:
+- Mapa completo de endpoints con nivel de acceso (público / autenticado / por rol)
+- Significado de los códigos 401, 403, 422, 429 y cuándo aparece cada uno
+- Decisiones de negocio clave: cómo se aplican cupones, cuándo se descuenta el stock, qué pasa al cancelar
+- Flujo end-to-end de compra con ejemplos curl (login → cupón → orden → pago)
+- Cómo forzar errores para probar (incluido `?simulateFailure=true` en pagos)
+
+---
+
 ## Requisitos
 
 - Java 17+

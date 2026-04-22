@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,19 +35,18 @@ public class DiscountsController {
     @GetMapping("/{discountId}")
     public ResponseEntity<Discount> getDiscountById(@PathVariable int discountId) {
         Optional<Discount> result = discountService.getDiscountById(discountId);
-        if (result.isPresent()) {
-            return ResponseEntity.ok(result.get());
-        }
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createDiscount(@RequestBody DiscountRequest request) {
         Discount result = discountService.createDiscount(request);
         return ResponseEntity.created(URI.create("/discounts/" + result.getId())).body(result);
     }
 
     @PutMapping("/{discountId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> updateDiscount(@PathVariable int discountId,
             @RequestBody DiscountRequest request) {
         Discount updated = discountService.updateDiscount(discountId, request);
@@ -54,6 +54,7 @@ public class DiscountsController {
     }
 
     @DeleteMapping("/{discountId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteDiscount(@PathVariable int discountId) {
         discountService.deleteDiscount(discountId);
         return ResponseEntity.noContent().build();

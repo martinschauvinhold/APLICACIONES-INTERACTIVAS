@@ -4,12 +4,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -161,6 +164,78 @@ class SecurityAccessTest {
     @Test
     void getSupportTicket_deberiaSeguirRequierendo401_sinToken() throws Exception {
         mockMvc.perform(get("/support/tickets/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── Discounts: escritura solo admin (regresión TESTING.md #46) ────────────
+
+    @Test
+    void postDiscount_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/discounts"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void putDiscount_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(put("/discounts/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteDiscount_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(delete("/discounts/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "buyer")
+    void postDiscount_deberiaRetornar403_cuandoRolEsBuyer() throws Exception {
+        mockMvc.perform(post("/discounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "seller")
+    void postDiscount_deberiaRetornar403_cuandoRolEsSeller() throws Exception {
+        mockMvc.perform(post("/discounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ── Addresses: escritura requiere autenticación (regresión TESTING.md #47) ─
+
+    @Test
+    void postAddress_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/addresses"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void putAddress_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(put("/addresses/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteAddress_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(delete("/addresses/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── Sessions: el controller ya no se expone (regresión TESTING.md #48) ────
+
+    @Test
+    void getSessionsByUser_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(get("/sessions/user/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deleteSession_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(delete("/sessions/1"))
                 .andExpect(status().isUnauthorized());
     }
 }
