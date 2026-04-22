@@ -1,6 +1,7 @@
 package com.uade.tpo.demo.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,13 +18,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.uade.tpo.demo.entity.Session;
 import com.uade.tpo.demo.entity.User;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.SessionRepository;
+import com.uade.tpo.demo.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SessionServiceTest {
 
     @Mock
     private SessionRepository sessionRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private SessionServiceImpl sessionService;
@@ -35,6 +41,7 @@ class SessionServiceTest {
         var sessions = List.of(
                 Session.builder().id(1).user(user).deviceInfo("Chrome").build(),
                 Session.builder().id(2).user(user).deviceInfo("Firefox").build());
+        when(userRepository.existsById(5)).thenReturn(true);
         when(sessionRepository.findByUserId(5)).thenReturn(sessions);
 
         // Act
@@ -42,6 +49,17 @@ class SessionServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getSessionsByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste() {
+        // Arrange
+        when(userRepository.existsById(9999)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> sessionService.getSessionsByUser(9999))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("9999");
     }
 
     @Test

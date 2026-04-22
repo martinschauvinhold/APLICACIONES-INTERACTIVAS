@@ -24,9 +24,7 @@ public class SessionsController {
     @GetMapping("/{sessionId}")
     public ResponseEntity<Session> getSessionById(@PathVariable int sessionId) {
         Optional<Session> result = sessionService.getSessionById(sessionId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.notFound().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{sessionId}")
