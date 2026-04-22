@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -37,5 +38,129 @@ class SecurityAccessTest {
         mockMvc.perform(get("/users"))
                 .andExpect(status().is(not(401)))
                 .andExpect(status().is(not(403)));
+    }
+
+    // ── Endpoints públicos de catálogo: deben responder sin token ─────────────
+
+    @Test
+    void getCategorias_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/categories"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getCategoriaPorId_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/categories/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getProductos_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/products"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getProductoPorId_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/products/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getVariantes_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/variants"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getVariantePorId_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/variants/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getVariantesPorProducto_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/variants/product/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getReviews_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/reviews"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getReviewPorId_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/reviews/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    @Test
+    void getReviewsPorProducto_deberiaSerPublico_sinToken() throws Exception {
+        mockMvc.perform(get("/reviews/product/1"))
+                .andExpect(status().is(not(401)))
+                .andExpect(status().is(not(403)));
+    }
+
+    // ── Las mutaciones sobre los mismos recursos siguen requiriendo token ─────
+
+    @Test
+    void postCategoria_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/categories"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void postProducto_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/products"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void postVariante_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/variants"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void postReview_deberiaRetornar401_cuandoSinToken() throws Exception {
+        mockMvc.perform(post("/reviews"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── Endpoints sensibles que NO deben volverse públicos por error ──────────
+
+    @Test
+    void getCoupons_deberiaSeguirRequierendo401_sinToken() throws Exception {
+        mockMvc.perform(get("/coupons"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getDeliveries_deberiaSeguirRequierendo401_sinToken() throws Exception {
+        mockMvc.perform(get("/deliveries"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getTracking_deberiaSeguirRequierendo401_sinToken() throws Exception {
+        mockMvc.perform(get("/tracking/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getSupportTicket_deberiaSeguirRequierendo401_sinToken() throws Exception {
+        mockMvc.perform(get("/support/tickets/1"))
+                .andExpect(status().isUnauthorized());
     }
 }
