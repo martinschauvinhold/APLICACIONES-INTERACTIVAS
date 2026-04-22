@@ -420,10 +420,26 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 70 | GET | `/tracking/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 71 | GET | `/tracking/delivery/{deliveryId}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 72 | POST | `/tracking` | seller o admin | ✅ | | |
-| 73 | PUT | `/tracking/{id}/status` | seller o admin | ✅ | | |
+| 70 | GET | `/tracking/{id}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 — accesible con cualquier token (buyer, seller, admin) sin `@PreAuthorize` |
+| 70b | GET | `/tracking/{id}` | Sin token | — | ✅ OK | 401 |
+| 70c | GET | `/tracking/9999` | buyer + ID inexistente | — | ✅ OK | 404 `ShipmentTracking con id 9999 no encontrado` |
+| 71 | GET | `/tracking/delivery/{deliveryId}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista — accesible con cualquier token sin `@PreAuthorize` |
+| 71b | GET | `/tracking/delivery/{deliveryId}` | Sin token | — | ✅ OK | 401 |
+| 71c | GET | `/tracking/delivery/9999` | buyer + deliveryId inexistente | — | ✅ OK | 404 `Delivery con id 9999 no encontrado` |
+| 72 | POST | `/tracking` | seller | ✅ | ✅ OK | 201 + checkpoint creado con `status: IN_TRANSIT` |
+| 72b | POST | `/tracking` | admin | — | ✅ OK | 201 |
+| 72c | POST | `/tracking` | Sin token | — | ✅ OK | 401 |
+| 72d | POST | `/tracking` | buyer | — | ✅ OK | 403 |
+| 72e | POST | `/tracking` | seller + deliveryId inexistente | — | ✅ OK | 404 `Delivery con id 9999 no encontrado` |
+| 72f | POST | `/tracking` | seller + body `{}` | — | ✅ OK | 400 `status: must not be null, deliveryId: must not be null, checkpoint: must not be blank` |
+| 72g | POST | `/tracking` | seller + status enum inválido | — | ✅ OK | 400 `Cuerpo de la solicitud inválido o con valor no reconocido` |
+| 73 | PUT | `/tracking/{id}/status` | seller | ✅ | ✅ OK | 200 con `status` actualizado |
+| 73b | PUT | `/tracking/{id}/status` | admin | — | ✅ OK | 200 con `status` actualizado |
+| 73c | PUT | `/tracking/{id}/status` | Sin token | — | ✅ OK | 401 |
+| 73d | PUT | `/tracking/{id}/status` | buyer | — | ✅ OK | 403 |
+| 73e | PUT | `/tracking/9999/status` | seller + ID inexistente | — | ✅ OK | 404 `ShipmentTracking con id 9999 no encontrado` |
+| 73f | PUT | `/tracking/{id}/status` | seller + enum inválido | — | ✅ OK | 400 `Cuerpo de la solicitud inválido o con valor no reconocido` |
+| 73g | PUT | `/tracking/{id}/status` | seller + body `{}` | — | ✅ OK | 400 `status: must not be null` |
 
 ---
 
@@ -510,6 +526,7 @@ Estos endpoints están marcados con `@PreAuthorize` que permite acceso sin rol e
 | `GET /deliveries/{id}` | |
 | `GET /deliveries/order/{orderId}` | |
 | `GET /tracking/{id}` | |
+| `GET /tracking/delivery/{deliveryId}` | |
 | `GET /support/tickets/{id}` | |
 
 Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `SecurityConfig`.
@@ -556,3 +573,5 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 34 | ~~**BUG**: `POST /reviews` con body vacío devuelve 404 (buscaba userId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ReviewsController`, `@Positive` en `userId`/`productId`, `@Min(1) @Max(5)` en `rating` en `ReviewRequest`. |
 | 35 | ~~**BUG**: `PUT /deliveries/{id}` con valor de enum inválido en `status` devuelve 500 en vez de 400.~~ | ✅ **RESUELTO** — agregado `@ExceptionHandler(HttpMessageNotReadableException.class)` en `GlobalExceptionHandler` que devuelve 400 con mensaje claro. Aplica globalmente a todos los endpoints que reciban enums. |
 | 36 | ~~**COMPORTAMIENTO**: `GET /deliveries/order/{orderId}` con orderId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getDeliveriesByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. Test `getDeliveriesByOrder_deberiaLanzarNotFoundException_cuandoOrderNoExiste` agregado en `DeliveryServiceTest`. |
+| 37 | ~~**BUG**: `DELETE /deliveries/{id}` con checkpoints de seguimiento asociados devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteDelivery` en `DeliveryServiceImpl` ahora elimina primero los registros de `ShipmentTracking` con `shipmentTrackingRepository.deleteAll(findByDeliveryId(...))` antes de borrar la delivery. `ShipmentTrackingRepository` inyectado vía `@RequiredArgsConstructor`. Test `deleteDelivery_deberiaEliminar_cuandoIdExiste` actualizado para mockear el repositorio. |
+| 38 | ~~**BUG**: `DELETE /orders/{id}` con entregas que tienen checkpoints de seguimiento devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteOrder` en `OrderServiceImpl` ahora, antes de eliminar las deliveries, elimina sus tracking checkpoints iterando sobre las deliveries de la orden. `ShipmentTrackingRepository` inyectado vía `@Autowired`. |
