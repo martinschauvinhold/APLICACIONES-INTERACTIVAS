@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.Optional;
  
 import com.uade.tpo.demo.entity.Category;
-import com.uade.tpo.demo.exceptions.CategoryDuplicateException;
- 
+
 public interface CategoryService {
-    public ArrayList<Category> getCategories();
+    ArrayList<Category> getCategories();
+
+    ArrayList<Category> getActiveCategories();
+
+    Optional<Category> getCategoryById(int categoryId);
+
+    Category createCategory(String description);
  
-    public Optional<Category> getCategoryById(int categoryId);
- 
-    public Category createCategory(String description) throws CategoryDuplicateException;
- 
-    public Category updateCategory(int categoryId, String description);
- 
-    public void deleteCategory(int categoryId);
+    Category updateCategory(int categoryId, String description);
+
+    Category deactivateCategory(int categoryId);
+
+    void deleteCategory(int categoryId);
 }
  
