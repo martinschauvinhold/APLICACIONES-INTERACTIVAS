@@ -506,9 +506,15 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 98 | GET | `/sessions/user/{userId}` | Token | ✅ | | |
-| 99 | GET | `/sessions/{id}` | Token | ✅ | | |
-| 100 | DELETE | `/sessions/{id}` | Token | ✅ | | |
+| 98 | GET | `/sessions/user/{userId}` | Token | ✅ | ✅ OK | 200 + lista de sesiones del usuario |
+| 98b | GET | `/sessions/user/{userId}` | Sin token | — | ✅ OK | 401 |
+| 98c | GET | `/sessions/user/{userId}` | Token + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del usuario antes de buscar sesiones |
+| 99 | GET | `/sessions/{id}` | Token | ✅ | ✅ OK | 200 con sesión |
+| 99b | GET | `/sessions/{id}` | Sin token | — | ✅ OK | 401 |
+| 99c | GET | `/sessions/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
+| 100 | DELETE | `/sessions/{id}` | Token | ✅ | ✅ OK | 204 sin body |
+| 100b | DELETE | `/sessions/{id}` | Sin token | — | ✅ OK | 401 |
+| 100c | DELETE | `/sessions/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
 
 ---
 
@@ -575,3 +581,4 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 36 | ~~**COMPORTAMIENTO**: `GET /deliveries/order/{orderId}` con orderId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getDeliveriesByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. Test `getDeliveriesByOrder_deberiaLanzarNotFoundException_cuandoOrderNoExiste` agregado en `DeliveryServiceTest`. |
 | 37 | ~~**BUG**: `DELETE /deliveries/{id}` con checkpoints de seguimiento asociados devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteDelivery` en `DeliveryServiceImpl` ahora elimina primero los registros de `ShipmentTracking` con `shipmentTrackingRepository.deleteAll(findByDeliveryId(...))` antes de borrar la delivery. `ShipmentTrackingRepository` inyectado vía `@RequiredArgsConstructor`. Test `deleteDelivery_deberiaEliminar_cuandoIdExiste` actualizado para mockear el repositorio. |
 | 38 | ~~**BUG**: `DELETE /orders/{id}` con entregas que tienen checkpoints de seguimiento devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteOrder` en `OrderServiceImpl` ahora, antes de eliminar las deliveries, elimina sus tracking checkpoints iterando sobre las deliveries de la orden. `ShipmentTrackingRepository` inyectado vía `@Autowired`. |
+| 39 | ~~**COMPORTAMIENTO**: `GET /sessions/user/{userId}` con userId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getSessionsByUser` en `SessionServiceImpl` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. Test `getSessionsByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste` agregado en `SessionServiceTest`. |

@@ -194,7 +194,6 @@ Si una operación devuelve 500, buscar en el service si hay un `throw new Runtim
 
 - Código en **inglés** (clases, métodos, variables)
 - Campos de estado: siempre `enum` con `@Enumerated(EnumType.STRING)`, nunca `String`
-- Services usan `@RequiredArgsConstructor`, no `@Autowired`
 - Métodos de escritura tienen `@Transactional`
 - Controllers usan `@Valid` en `@RequestBody`
 - El controller **no** verifica existencia con `findById`: eso lo hace el service lanzando `NotFoundException`
