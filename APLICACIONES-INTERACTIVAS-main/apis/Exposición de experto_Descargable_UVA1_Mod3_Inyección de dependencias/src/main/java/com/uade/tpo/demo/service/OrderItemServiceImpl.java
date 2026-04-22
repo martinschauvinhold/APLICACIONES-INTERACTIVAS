@@ -26,6 +26,9 @@ public class OrderItemServiceImpl implements OrderItemService {
     private OrderRepository orderRepository;
 
     public List<OrderItem> getItemsByOrder(int orderId) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new NotFoundException("Order", orderId);
+        }
         return orderItemRepository.findByOrderId(orderId);
     }
 

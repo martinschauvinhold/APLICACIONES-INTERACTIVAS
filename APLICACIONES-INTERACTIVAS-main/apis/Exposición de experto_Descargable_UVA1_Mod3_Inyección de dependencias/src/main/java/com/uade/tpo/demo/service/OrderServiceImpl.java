@@ -22,6 +22,7 @@ import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
 import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.entity.Payment;
+import com.uade.tpo.demo.entity.PaymentStatus;
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
@@ -32,11 +33,13 @@ import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.AddressRepository;
 import com.uade.tpo.demo.repository.CouponRepository;
+import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.InventoryRepository;
 import com.uade.tpo.demo.repository.OrderItemRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.PaymentRepository;
 import com.uade.tpo.demo.repository.PriceTierRepository;
+import com.uade.tpo.demo.repository.ProductReturnRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
@@ -78,6 +81,12 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private DeliveryRepository deliveryRepository;
+
+    @Autowired
+    private ProductReturnRepository productReturnRepository;
+
     public ArrayList<Order> getOrders() {
         return new ArrayList<>(orderRepository.findAll());
     }
@@ -87,6 +96,9 @@ public class OrderServiceImpl implements OrderService {
     }
 
     public List<Order> getOrdersByUser(int userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("User", userId);
+        }
         return orderRepository.findByUserId(userId);
     }
 
@@ -200,7 +212,12 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    @Transactional
     public void deleteOrder(int orderId) {
+        orderItemRepository.deleteAll(orderItemRepository.findByOrderId(orderId));
+        paymentRepository.deleteAll(paymentRepository.findByOrderId(orderId));
+        deliveryRepository.deleteAll(deliveryRepository.findByOrderId(orderId));
+        productReturnRepository.deleteAll(productReturnRepository.findByOrderId(orderId));
         orderRepository.deleteById(orderId);
     }
 
@@ -229,7 +246,7 @@ public class OrderServiceImpl implements OrderService {
 
             List<Payment> payments = paymentRepository.findByOrderId(orderId);
             for (Payment payment : payments) {
-                payment.setPaymentStatus("REFUNDED");
+                payment.setPaymentStatus(PaymentStatus.REFUNDED);
                 paymentRepository.save(payment);
             }
         }

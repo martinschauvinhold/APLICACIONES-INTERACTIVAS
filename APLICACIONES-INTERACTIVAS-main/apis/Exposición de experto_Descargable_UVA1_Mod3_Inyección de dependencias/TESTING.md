@@ -265,14 +265,43 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 43 | GET | `/orders` | admin | ✅ | | |
-| 44 | GET | `/orders/{id}` | buyer o admin | ✅ | | |
-| 45 | GET | `/orders/user/{userId}` | buyer o admin | ✅ | | |
-| 46 | POST | `/orders` | buyer | ✅ | | |
-| 47 | PUT | `/orders/{id}` | buyer o admin | ✅ | | |
-| 48 | PUT | `/orders/{id}/cancel` | buyer o admin | ✅ | | |
-| 49 | DELETE | `/orders/{id}` | admin | ✅ | | |
-| 50 | DELETE | `/orders/expired` | admin | ✅ | | |
+| 43 | GET | `/orders` | admin | ✅ | ✅ OK | 200 + lista de órdenes |
+| 43b | GET | `/orders` | Sin token | — | ✅ OK | 401 |
+| 43c | GET | `/orders` | buyer | — | ✅ OK | 403 |
+| 44 | GET | `/orders/{id}` | buyer o admin | ✅ | ✅ OK | 200 con orden existente |
+| 44b | GET | `/orders/{id}` | buyer | — | ✅ OK | 200 |
+| 44c | GET | `/orders/9999` | admin + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 44d | GET | `/orders/{id}` | Sin token | — | ✅ OK | 401 |
+| 44e | GET | `/orders/{id}` | seller | — | ✅ OK | 403 |
+| 45 | GET | `/orders/user/{userId}` | admin | ✅ | ✅ OK | 200 + lista de órdenes del usuario |
+| 45b | GET | `/orders/user/{userId}` | buyer | — | ✅ OK | 200 |
+| 45c | GET | `/orders/user/9999` | admin + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del usuario |
+| 45d | GET | `/orders/user/{userId}` | Sin token | — | ✅ OK | 401 |
+| 45e | GET | `/orders/user/{userId}` | seller | — | ✅ OK | 403 |
+| 46 | POST | `/orders` | buyer | ✅ | ✅ OK | 201 + orden creada en estado PENDING |
+| 46b | POST | `/orders` | Sin token | — | ✅ OK | 401 |
+| 46c | POST | `/orders` | seller | — | ✅ OK | 403 |
+| 46d | POST | `/orders` | buyer + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` |
+| 46e | POST | `/orders` | buyer + addressId inexistente | — | ✅ OK | 404 `Address con id 9999 no encontrado` |
+| 46f | POST | `/orders` | buyer + variantId inexistente | — | ✅ OK | 404 `ProductVariant con id 9999 no encontrado` |
+| 46g | POST | `/orders` | buyer + items vacíos | — | ✅ OK | 422 `La orden debe contener al menos un item` |
+| 46h | POST | `/orders` | buyer + stock insuficiente | — | ✅ OK | 422 `Stock insuficiente para variante X. Stock disponible: Y, solicitado: Z` |
+| 47 | PUT | `/orders/{id}` | buyer | ✅ | ✅ OK | 200 con orden actualizada (updatedAt actualizado) |
+| 47b | PUT | `/orders/9999` | admin + ID inexistente | — | ✅ OK | 404 |
+| 47c | PUT | `/orders/{id}` | Sin token | — | ✅ OK | 401 |
+| 47d | PUT | `/orders/{id}` | seller | — | ✅ OK | 403 |
+| 48 | PUT | `/orders/{id}/cancel` | buyer | ✅ | ✅ OK | 200 + `status: CANCELLED` |
+| 48b | PUT | `/orders/9999/cancel` | admin + ID inexistente | — | ✅ OK | 404 `Order con id 9999 no encontrado` |
+| 48c | PUT | `/orders/{id}/cancel` | Sin token | — | ✅ OK | 401 |
+| 48d | PUT | `/orders/{id}/cancel` | seller | — | ✅ OK | 403 |
+| 48e | PUT | `/orders/{id}/cancel` | buyer + orden ya CANCELLED | — | ✅ OK | 422 `No se puede cancelar una orden con estado: CANCELLED` |
+| 49 | DELETE | `/orders/{id}` | admin | ✅ | ✅ OK | 204 sin body — **bug corregido**: era 500 (FK constraint por items/pagos), `deleteOrder` ahora elimina entidades relacionadas en cascada |
+| 49b | DELETE | `/orders/9999` | admin + ID inexistente | — | ✅ OK | 404 |
+| 49c | DELETE | `/orders/{id}` | Sin token | — | ✅ OK | 401 |
+| 49d | DELETE | `/orders/{id}` | buyer | — | ✅ OK | 403 |
+| 50 | DELETE | `/orders/expired` | admin | ✅ | ✅ OK | 200 + cantidad de órdenes canceladas (0 si no hay expiradas) |
+| 50b | DELETE | `/orders/expired` | Sin token | — | ✅ OK | 401 |
+| 50c | DELETE | `/orders/expired` | buyer | — | ✅ OK | 403 |
 
 ---
 
@@ -280,9 +309,20 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 51 | GET | `/order-items/{id}` | buyer o admin | ✅ | | |
-| 52 | GET | `/order-items/order/{orderId}` | buyer o admin | ✅ | | |
-| 53 | DELETE | `/order-items/{id}` | buyer o admin | ✅ | | |
+| 51 | GET | `/order-items/{id}` | buyer | ✅ | ✅ OK | 200 con item |
+| 51b | GET | `/order-items/9999` | admin + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 51c | GET | `/order-items/{id}` | Sin token | — | ✅ OK | 401 |
+| 51d | GET | `/order-items/{id}` | seller | — | ✅ OK | 403 |
+| 52 | GET | `/order-items/order/{orderId}` | buyer | ✅ | ✅ OK | 200 + lista de items |
+| 52b | GET | `/order-items/order/9999` | admin + orderId inexistente | — | ✅ OK | 404 `Order con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia de la orden |
+| 52c | GET | `/order-items/order/{orderId}` | Sin token | — | ✅ OK | 401 |
+| 52d | GET | `/order-items/order/{orderId}` | seller | — | ✅ OK | 403 |
+| 53 | DELETE | `/order-items/{id}` | buyer (orden con 2+ items) | ✅ | ✅ OK | 204 sin body, recalcula total de la orden |
+| 53b | DELETE | `/order-items/{id}` | buyer + último item de la orden | — | ✅ OK | 422 `No se puede borrar el ultimo item de una orden. Cancelar la orden en su lugar.` |
+| 53c | DELETE | `/order-items/{id}` | admin + item de orden PAID | — | ✅ OK | 422 `Solo se pueden borrar items de ordenes en estado PENDING. Estado actual: PAID` |
+| 53d | DELETE | `/order-items/9999` | buyer + ID inexistente | — | ✅ OK | 404 |
+| 53e | DELETE | `/order-items/{id}` | Sin token | — | ✅ OK | 401 |
+| 53f | DELETE | `/order-items/{id}` | seller | — | ✅ OK | 403 |
 
 ---
 
@@ -466,3 +506,8 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 24 | ~~**BUG**: `GET /addresses/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `AddressesController.java`. |
 | 25 | ~~**COMPORTAMIENTO**: `GET /addresses/user/{userId}` con userId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getAddressesByUser` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. |
 | 26 | ~~**BUG**: `POST /addresses` con body vacío devuelve 404 (buscaba userId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Validated` en controller y `@Positive` en `userId`, `@NotBlank` en `street`, `city`, `zipCode` en `AddressRequest`. |
+| 27 | ~~**BUG**: `GET /orders/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `OrdersController.java`. |
+| 28 | ~~**COMPORTAMIENTO**: `GET /orders/user/{userId}` con userId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getOrdersByUser` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. |
+| 29 | ~~**BUG**: `DELETE /orders/{id}` con orden que tiene items/pagos devuelve 500 (FK constraint).~~ | ✅ **RESUELTO** — `deleteOrder` ahora elimina en cascada: order items, payments, deliveries y returns antes de borrar la orden. Agregado `@Transactional`. |
+| 30 | ~~**BUG**: `GET /order-items/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `OrderItemsController.java`. |
+| 31 | ~~**COMPORTAMIENTO**: `GET /order-items/order/{orderId}` con orderId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getItemsByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. |
