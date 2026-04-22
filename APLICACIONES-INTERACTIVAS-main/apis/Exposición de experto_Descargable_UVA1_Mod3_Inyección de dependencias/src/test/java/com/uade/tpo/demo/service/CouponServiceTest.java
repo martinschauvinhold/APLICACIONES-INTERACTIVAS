@@ -20,6 +20,7 @@ import com.uade.tpo.demo.entity.Coupon;
 import com.uade.tpo.demo.entity.Discount;
 import com.uade.tpo.demo.entity.dto.CouponRequest;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.DuplicateException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CouponRepository;
 import com.uade.tpo.demo.repository.DiscountRepository;
@@ -86,6 +87,7 @@ class CouponServiceTest {
         request.setCode("DESCUENTO10");
         request.setUsageLimit(100);
 
+        when(couponRepository.findByCode("DESCUENTO10")).thenReturn(Optional.empty());
         when(discountRepository.findById(1)).thenReturn(Optional.of(discount));
         when(couponRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -100,10 +102,27 @@ class CouponServiceTest {
     }
 
     @Test
+    void createCoupon_deberiaLanzarDuplicateException_cuandoCodigoYaExiste() {
+        // Arrange
+        var request = new CouponRequest();
+        request.setDiscountId(1);
+        request.setCode("DESCUENTO10");
+        var existing = Coupon.builder().id(1).code("DESCUENTO10").build();
+        when(couponRepository.findByCode("DESCUENTO10")).thenReturn(Optional.of(existing));
+
+        // Act & Assert
+        assertThatThrownBy(() -> couponService.createCoupon(request))
+                .isInstanceOf(DuplicateException.class)
+                .hasMessageContaining("DESCUENTO10");
+    }
+
+    @Test
     void createCoupon_deberiaLanzarNotFoundException_cuandoDescuentoNoExiste() {
         // Arrange
         var request = new CouponRequest();
         request.setDiscountId(99);
+        request.setCode("NUEVO");
+        when(couponRepository.findByCode("NUEVO")).thenReturn(Optional.empty());
         when(discountRepository.findById(99)).thenReturn(Optional.empty());
 
         // Act & Assert

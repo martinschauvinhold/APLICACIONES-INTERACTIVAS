@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Coupon;
 import com.uade.tpo.demo.entity.Discount;
 import com.uade.tpo.demo.entity.dto.CouponRequest;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.DuplicateException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CouponRepository;
 import com.uade.tpo.demo.repository.DiscountRepository;
@@ -37,6 +38,10 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public Coupon createCoupon(CouponRequest request) {
+        if (couponRepository.findByCode(request.getCode()).isPresent()) {
+            throw new DuplicateException("Coupon", "code", request.getCode());
+        }
+
         Discount discount = discountRepository.findById(request.getDiscountId())
                 .orElseThrow(() -> new NotFoundException("Discount", request.getDiscountId()));
 

@@ -494,11 +494,26 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 93 | GET | `/coupons` | Token (¿debería ser público?) | ❌ falta header | | |
-| 94 | GET | `/coupons/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 95 | GET | `/coupons/validate/{code}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 96 | POST | `/coupons` | Token | ❌ falta header | | |
-| 97 | DELETE | `/coupons/{id}` | Token | ❌ falta header | | |
+| 93 | GET | `/coupons` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista — cualquier rol autenticado (no hay `@PreAuthorize`) |
+| 93b | GET | `/coupons` | Sin token | — | ✅ OK | 401 |
+| 94 | GET | `/coupons/{id}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 — cualquier rol autenticado |
+| 94b | GET | `/coupons/{id}` | Sin token | — | ✅ OK | 401 |
+| 94c | GET | `/coupons/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 95 | GET | `/coupons/validate/{code}` | buyer o admin | ❌ falta header | ✅ OK | 200 + cupón válido |
+| 95b | GET | `/coupons/validate/{code}` | buyer/admin + code inexistente | — | ✅ OK | 404 `Coupon con id NOEXISTE no encontrado` |
+| 95c | GET | `/coupons/validate/{code}` | Sin token | — | ✅ OK | 401 |
+| 95d | GET | `/coupons/validate/{code}` | buyer/admin + cupón expirado | — | ✅ OK | 422 `El cupon 'X' esta expirado` |
+| 95e | GET | `/coupons/validate/{code}` | buyer/admin + límite de usos agotado | — | ✅ OK | 422 `El cupon 'X' alcanzo el limite de usos (N)` |
+| 96 | POST | `/coupons` | admin | ❌ falta header | ✅ OK | 201 + cupón creado |
+| 96b | POST | `/coupons` | Sin token | — | ✅ OK | 401 |
+| 96c | POST | `/coupons` | buyer / seller | — | — | esperar 403 — `@PreAuthorize("hasRole('admin')")` agregado |
+| 96d | POST | `/coupons` | admin + discountId inexistente | — | ✅ OK | 404 `Discount con id 9999 no encontrado` |
+| 96e | POST | `/coupons` | admin + body `{}` | — | ✅ OK | 400 `discountId: must be greater than 0, code: must not be blank` — **bug corregido**: era 404 (buscaba discountId=0), agregado `@Valid` en controller y `@Positive`/`@NotBlank` en DTO |
+| 96f | POST | `/coupons` | admin + código duplicado | — | ✅ OK | 409 — **bug corregido**: era 500 (constraint DB), agregado duplicate check en `createCoupon` |
+| 97 | DELETE | `/coupons/{id}` | admin | ❌ falta header | ✅ OK | 204 sin body |
+| 97b | DELETE | `/coupons/{id}` | Sin token | — | ✅ OK | 401 |
+| 97c | DELETE | `/coupons/{id}` | buyer / seller | — | — | esperar 403 — `@PreAuthorize("hasRole('admin')")` agregado |
+| 97d | DELETE | `/coupons/{id}` | admin + ID inexistente | — | ✅ OK | 404 `Coupon con id 9999 no encontrado` |
 
 ---
 
@@ -536,6 +551,14 @@ Estos endpoints están marcados con `@PreAuthorize` que permite acceso sin rol e
 | `GET /support/tickets/{id}` | |
 
 Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `SecurityConfig`.
+
+---
+
+## Decisiones de negocio
+
+| # | Pregunta | Decisión |
+|---|----------|----------|
+| 1 | ¿Puede una persona tener cuenta de comprador y vendedor al mismo tiempo con el mismo email? | **Decisión pendiente de implementar** — El modelo actual asigna un único rol por usuario (`role` campo simple + `email unique`), por lo que hoy no es posible. La solución preferida es multi-rol: `role` pasa a `@ElementCollection` o `@ManyToMany`, el JWT incluye todos los roles, y los `@PreAuthorize` se adaptan. Es un cambio de modelo no trivial; se pospone para una iteración futura. Alternativa de corto plazo: endpoint `PATCH /users/{id}/role` (solo admin) para promover un buyer a seller, pero pierde el historial de roles. |
 
 ---
 
@@ -582,3 +605,8 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 37 | ~~**BUG**: `DELETE /deliveries/{id}` con checkpoints de seguimiento asociados devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteDelivery` en `DeliveryServiceImpl` ahora elimina primero los registros de `ShipmentTracking` con `shipmentTrackingRepository.deleteAll(findByDeliveryId(...))` antes de borrar la delivery. `ShipmentTrackingRepository` inyectado vía `@RequiredArgsConstructor`. Test `deleteDelivery_deberiaEliminar_cuandoIdExiste` actualizado para mockear el repositorio. |
 | 38 | ~~**BUG**: `DELETE /orders/{id}` con entregas que tienen checkpoints de seguimiento devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteOrder` en `OrderServiceImpl` ahora, antes de eliminar las deliveries, elimina sus tracking checkpoints iterando sobre las deliveries de la orden. `ShipmentTrackingRepository` inyectado vía `@Autowired`. |
 | 39 | ~~**COMPORTAMIENTO**: `GET /sessions/user/{userId}` con userId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getSessionsByUser` en `SessionServiceImpl` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. Test `getSessionsByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste` agregado en `SessionServiceTest`. |
+| 40 | ~~**BUG**: `GET /coupons/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `CouponsController.java`. |
+| 41 | ~~**BUG**: `POST /coupons` con body vacío devuelve 404 (buscaba discountId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Valid` en `createCoupon` en `CouponsController`, `@Positive` en `discountId` y `@NotBlank` en `code` en `CouponRequest`. |
+| 42 | ~~**BUG**: `POST /coupons` con código duplicado devuelve 500 (DB unique constraint) en vez de 409.~~ | ✅ **RESUELTO** — `createCoupon` en `CouponServiceImpl` ahora verifica `couponRepository.findByCode` y lanza `DuplicateException` (409) si el código ya existe. Test `createCoupon_deberiaLanzarDuplicateException_cuandoCodigoYaExiste` agregado en `CouponServiceTest`. |
+| 43 | ~~**DISEÑO**: `CouponsController` no tenía `@PreAuthorize` en POST y DELETE.~~ | ✅ **RESUELTO** — `POST /coupons` y `DELETE /coupons/{id}` ahora requieren `hasRole('admin')`. |
+| 44 | ~~**DECISIÓN PENDIENTE**: `GET /coupons/validate/{code}` — ¿qué roles pueden validar cupones?~~ | ✅ **RESUELTO** — `@PreAuthorize("hasAnyRole('buyer','admin')")`: buyers lo usan en el flujo de compra, admins pueden validar para soporte/testing. |
