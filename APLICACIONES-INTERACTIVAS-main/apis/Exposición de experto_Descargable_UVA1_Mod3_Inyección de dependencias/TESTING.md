@@ -7,15 +7,22 @@
 
 ## Nota sobre autenticación
 
-`SecurityConfig` tiene `.anyRequest().authenticated()` — **todos** los endpoints (excepto `/auth/register`, `/auth/login` y `/error`) requieren token JWT.
+`SecurityConfig` tiene `.anyRequest().authenticated()` — **casi todos** los endpoints requieren token JWT, con las siguientes excepciones explícitas vía `permitAll()`:
 
-- Sin token → **401**
-- Con token pero rol incorrecto → **403**
-- Con token y rol correcto → **2xx**
+- `/auth/register`, `/auth/login`, `/error`
+- `GET /categories`, `GET /categories/**`
+- `GET /products`, `GET /products/**`
+- `GET /variants`, `GET /variants/**`
+- `GET /reviews`, `GET /reviews/**`
 
-Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` devuelve 403 (token de buyer, endpoint es solo admin). **Son errores distintos.**
+Comportamiento esperado:
 
-**Decisión pendiente:** ¿queremos que endpoints de lectura como `/categories`, `/products`, `/reviews`, `/variants` sean verdaderamente públicos (sin token)? Si sí, hay que actualizar `SecurityConfig`.
+- Endpoint protegido sin token → **401**
+- Endpoint protegido con token pero rol incorrecto → **403**
+- Endpoint protegido con token y rol correcto → **2xx**
+- Endpoint público (catálogo) → **2xx** sin necesidad de token
+
+> **Nota Postman:** la colección incluye una variable `{{token}}` que se setea automáticamente vía script post-request al ejecutar `Login` (o `Registrar usuario`). Después de loguearte una vez, el resto de los requests autenticados ya envían el header correcto.
 
 ---
 
@@ -82,11 +89,11 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 10 | GET | `/categories` | Token | ❌ falta header | ✅ OK | 200 + lista |
-| 10b | GET | `/categories` | Sin token | — | ✅ OK | 401 |
-| 11 | GET | `/categories/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 |
-| 11b | GET | `/categories/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
-| 11c | GET | `/categories/{id}` | Sin token | — | ✅ OK | 401 |
+| 10 | GET | `/categories` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista — endpoint público |
+| 10b | GET | `/categories` | Sin token | — | ✅ OK | 200 + lista (público, devuelve solo activas) |
+| 11 | GET | `/categories/{id}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 — endpoint público |
+| 11b | GET | `/categories/{id}` | Sin token + ID inexistente | — | ✅ OK | 404 |
+| 11c | GET | `/categories/{id}` | Sin token | — | ✅ OK | 200 (público) |
 | 12 | POST | `/categories` | admin | ✅ | ✅ OK | 201 |
 | 12b | POST | `/categories` | admin + descripción duplicada | — | ✅ OK | 409 `Category con description 'X' ya existe` |
 | 12c | POST | `/categories` | Sin token | — | ✅ OK | 401 |
@@ -117,11 +124,11 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 15 | GET | `/products` | Token | ❌ falta header | ✅ OK | 200 + lista |
-| 15b | GET | `/products` | Sin token | — | ✅ OK | 401 |
-| 16 | GET | `/products/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 |
-| 16b | GET | `/products/{id}` | Token + ID inexistente | — | ✅ OK | 404 |
-| 16c | GET | `/products/{id}` | Sin token | — | ✅ OK | 401 |
+| 15 | GET | `/products` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista — endpoint público |
+| 15b | GET | `/products` | Sin token | — | ✅ OK | 200 + lista (público) |
+| 16 | GET | `/products/{id}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 — endpoint público |
+| 16b | GET | `/products/{id}` | Sin token + ID inexistente | — | ✅ OK | 404 |
+| 16c | GET | `/products/{id}` | Sin token | — | ✅ OK | 200 (público) |
 | 17 | POST | `/products` | admin | ❌ falta header | ✅ OK | 201 |
 | 17b | POST | `/products` | seller | ❌ falta header | ✅ OK | 201 |
 | 17c | POST | `/products` | Sin token | — | ✅ OK | 401 |
@@ -147,14 +154,14 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 20 | GET | `/variants` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista (vacía si no hay variantes) |
-| 20b | GET | `/variants` | Sin token | — | ✅ OK | 401 |
-| 21 | GET | `/variants/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 con variante |
-| 21b | GET | `/variants/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
-| 21c | GET | `/variants/{id}` | Sin token | — | ✅ OK | 401 |
-| 22 | GET | `/variants/product/{productId}` | Token + productId existente | ❌ falta header | ✅ OK | 200 + lista de variantes del producto |
-| 22b | GET | `/variants/product/{productId}` | Token + productId inexistente | — | ✅ OK | 404 `Product con id X no encontrado` — corregido: ahora verifica existencia del producto antes de buscar variantes |
-| 22c | GET | `/variants/product/{productId}` | Sin token | — | ✅ OK | 401 |
+| 20 | GET | `/variants` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista — endpoint público |
+| 20b | GET | `/variants` | Sin token | — | ✅ OK | 200 + lista (público) |
+| 21 | GET | `/variants/{id}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 con variante |
+| 21b | GET | `/variants/{id}` | Sin token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 21c | GET | `/variants/{id}` | Sin token | — | ✅ OK | 200 (público) |
+| 22 | GET | `/variants/product/{productId}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista de variantes del producto |
+| 22b | GET | `/variants/product/{productId}` | Sin token + productId inexistente | — | ✅ OK | 404 `Product con id X no encontrado` — corregido: ahora verifica existencia del producto antes de buscar variantes |
+| 22c | GET | `/variants/product/{productId}` | Sin token | — | ✅ OK | 200 (público) |
 | 23 | POST | `/variants` | seller | ❌ falta header | ✅ OK | 201 + variante creada |
 | 23b | POST | `/variants` | admin | — | ✅ OK | 201 + variante creada |
 | 23c | POST | `/variants` | Sin token | — | ✅ OK | 401 |
@@ -355,14 +362,14 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 58 | GET | `/reviews` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista |
-| 58b | GET | `/reviews` | Sin token | — | ✅ OK | 401 |
-| 59 | GET | `/reviews/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 con reseña |
-| 59b | GET | `/reviews/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
-| 59c | GET | `/reviews/{id}` | Sin token | — | ✅ OK | 401 |
-| 60 | GET | `/reviews/product/{productId}` | Token + productId existente | ❌ falta header | ✅ OK | 200 + lista de reseñas |
-| 60b | GET | `/reviews/product/{productId}` | Token + productId inexistente | — | ✅ OK | 404 `Product con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del producto antes de buscar reseñas |
-| 60c | GET | `/reviews/product/{productId}` | Sin token | — | ✅ OK | 401 |
+| 58 | GET | `/reviews` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista — endpoint público |
+| 58b | GET | `/reviews` | Sin token | — | ✅ OK | 200 + lista (público) |
+| 59 | GET | `/reviews/{id}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 con reseña |
+| 59b | GET | `/reviews/{id}` | Sin token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 59c | GET | `/reviews/{id}` | Sin token | — | ✅ OK | 200 (público) |
+| 60 | GET | `/reviews/product/{productId}` | Público | ✅ (sin token, intencional) | ✅ OK | 200 + lista de reseñas |
+| 60b | GET | `/reviews/product/{productId}` | Sin token + productId inexistente | — | ✅ OK | 404 `Product con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del producto antes de buscar reseñas |
+| 60c | GET | `/reviews/product/{productId}` | Sin token | — | ✅ OK | 200 (público) |
 | 61 | POST | `/reviews` | buyer + datos válidos | ❌ falta header | ✅ OK | 201 + reseña creada |
 | 61b | POST | `/reviews` | Sin token | — | ✅ OK | 401 |
 | 61c | POST | `/reviews` | seller | — | ✅ OK | 403 |
@@ -494,11 +501,26 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 93 | GET | `/coupons` | Token (¿debería ser público?) | ❌ falta header | | |
-| 94 | GET | `/coupons/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 95 | GET | `/coupons/validate/{code}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 96 | POST | `/coupons` | Token | ❌ falta header | | |
-| 97 | DELETE | `/coupons/{id}` | Token | ❌ falta header | | |
+| 93 | GET | `/coupons` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista — cualquier rol autenticado (no hay `@PreAuthorize`) |
+| 93b | GET | `/coupons` | Sin token | — | ✅ OK | 401 |
+| 94 | GET | `/coupons/{id}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 — cualquier rol autenticado |
+| 94b | GET | `/coupons/{id}` | Sin token | — | ✅ OK | 401 |
+| 94c | GET | `/coupons/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 95 | GET | `/coupons/validate/{code}` | buyer o admin | ❌ falta header | ✅ OK | 200 + cupón válido |
+| 95b | GET | `/coupons/validate/{code}` | buyer/admin + code inexistente | — | ✅ OK | 404 `Coupon con id NOEXISTE no encontrado` |
+| 95c | GET | `/coupons/validate/{code}` | Sin token | — | ✅ OK | 401 |
+| 95d | GET | `/coupons/validate/{code}` | buyer/admin + cupón expirado | — | ✅ OK | 422 `El cupon 'X' esta expirado` |
+| 95e | GET | `/coupons/validate/{code}` | buyer/admin + límite de usos agotado | — | ✅ OK | 422 `El cupon 'X' alcanzo el limite de usos (N)` |
+| 96 | POST | `/coupons` | admin | ❌ falta header | ✅ OK | 201 + cupón creado |
+| 96b | POST | `/coupons` | Sin token | — | ✅ OK | 401 |
+| 96c | POST | `/coupons` | buyer / seller | — | — | esperar 403 — `@PreAuthorize("hasRole('admin')")` agregado |
+| 96d | POST | `/coupons` | admin + discountId inexistente | — | ✅ OK | 404 `Discount con id 9999 no encontrado` |
+| 96e | POST | `/coupons` | admin + body `{}` | — | ✅ OK | 400 `discountId: must be greater than 0, code: must not be blank` — **bug corregido**: era 404 (buscaba discountId=0), agregado `@Valid` en controller y `@Positive`/`@NotBlank` en DTO |
+| 96f | POST | `/coupons` | admin + código duplicado | — | ✅ OK | 409 — **bug corregido**: era 500 (constraint DB), agregado duplicate check en `createCoupon` |
+| 97 | DELETE | `/coupons/{id}` | admin | ❌ falta header | ✅ OK | 204 sin body |
+| 97b | DELETE | `/coupons/{id}` | Sin token | — | ✅ OK | 401 |
+| 97c | DELETE | `/coupons/{id}` | buyer / seller | — | — | esperar 403 — `@PreAuthorize("hasRole('admin')")` agregado |
+| 97d | DELETE | `/coupons/{id}` | admin + ID inexistente | — | ✅ OK | 404 `Coupon con id 9999 no encontrado` |
 
 ---
 
@@ -520,22 +542,30 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 ## Decisiones pendientes
 
-Estos endpoints están marcados con `@PreAuthorize` que permite acceso sin rol específico o sin `@PreAuthorize` directamente, pero `SecurityConfig` los filtra igual porque usa `.anyRequest().authenticated()`. Definir si van a ser verdaderamente públicos o siempre requieren token:
+Estos endpoints estaban marcados con `@PreAuthorize` que permite acceso sin rol específico o sin `@PreAuthorize` directamente, pero `SecurityConfig` los filtraba igual porque usaba `.anyRequest().authenticated()`. Resuelto: los endpoints de catálogo se marcaron como públicos, el resto sigue requiriendo token (datos sensibles: direcciones de envío, números de orden, códigos de descuento, mensajes de tickets).
 
-| Endpoint | ¿Público? |
-|----------|-----------|
-| `GET /categories` | |
-| `GET /products` | |
-| `GET /variants` | |
-| `GET /reviews` | |
-| `GET /coupons` | |
-| `GET /deliveries/{id}` | |
-| `GET /deliveries/order/{orderId}` | |
-| `GET /tracking/{id}` | |
-| `GET /tracking/delivery/{deliveryId}` | |
-| `GET /support/tickets/{id}` | |
+| Endpoint | ¿Público? | Implementación |
+|----------|-----------|----------------|
+| `GET /categories` y `GET /categories/{id}` | ✅ Sí | `permitAll()` en `SecurityConfig` |
+| `GET /products` y `GET /products/{id}` | ✅ Sí | `permitAll()` en `SecurityConfig` |
+| `GET /variants`, `GET /variants/{id}`, `GET /variants/product/{id}` | ✅ Sí | `permitAll()` en `SecurityConfig` |
+| `GET /reviews`, `GET /reviews/{id}`, `GET /reviews/product/{id}` | ✅ Sí | `permitAll()` en `SecurityConfig` |
+| `GET /coupons` | ❌ No | Sigue requiriendo token (códigos de descuento son sensibles) |
+| `GET /deliveries/{id}` | ❌ No | Expone direcciones de envío |
+| `GET /deliveries/order/{orderId}` | ❌ No | Expone número de orden + envío |
+| `GET /tracking/{id}` | ❌ No | Expone ubicación del envío |
+| `GET /tracking/delivery/{deliveryId}` | ❌ No | Expone ubicación del envío |
+| `GET /support/tickets/{id}` | ❌ No | Expone mensajes privados de soporte |
 
-Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `SecurityConfig`.
+Tests agregados en `SecurityAccessTest`: 10 casos verifican que los GETs públicos no devuelven 401/403 sin token, 4 casos verifican que las mutaciones (POST) sobre los mismos recursos siguen requiriendo token, y 4 casos verifican que los endpoints sensibles que NO se hicieron públicos siguen devolviendo 401 sin token.
+
+---
+
+## Decisiones de negocio
+
+| # | Pregunta | Decisión |
+|---|----------|----------|
+| 1 | ¿Puede una persona tener cuenta de comprador y vendedor al mismo tiempo con el mismo email? | **Decisión pendiente de implementar** — El modelo actual asigna un único rol por usuario (`role` campo simple + `email unique`), por lo que hoy no es posible. La solución preferida es multi-rol: `role` pasa a `@ElementCollection` o `@ManyToMany`, el JWT incluye todos los roles, y los `@PreAuthorize` se adaptan. Es un cambio de modelo no trivial; se pospone para una iteración futura. Alternativa de corto plazo: endpoint `PATCH /users/{id}/role` (solo admin) para promover un buyer a seller, pero pierde el historial de roles. |
 
 ---
 
@@ -543,11 +573,11 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 
 | # | Pregunta | Contexto | Decisión |
 |---|----------|----------|----------|
-| 1 | ¿Los endpoints de lectura (categories, products, variants, reviews, coupons, tracking) deben ser públicos o requerir token? | Actualmente todos requieren auth por `.anyRequest().authenticated()` en `SecurityConfig`. Si se decide que son públicos, hay que agregarlos al `permitAll()` y actualizar la colección de Postman. | |
-| 2 | ¿La colección de Postman se actualiza agregando `Authorization: Bearer {{token}}` a los requests que lo necesitan, o se cambia `SecurityConfig` para hacer algunos endpoints verdaderamente públicos? | ~30 requests en la colección no tienen el header. Ambos caminos son válidos, depende de la decisión anterior. | |
-| 3 | ¿El logout debe invalidar solo la sesión actual o todas las sesiones del usuario? | El código actual (`sessionRepository::deleteByUser`) borra todas las sesiones al hacer logout desde cualquier dispositivo. Si el usuario está logueado desde el celular y la PC, al cerrar sesión desde uno se cierra en ambos. | |
-| 4 | ¿Los límites de rate limiting son adecuados? | Actualmente: 10 req/min para `/auth/*`, 100 req/min para el resto (por IP). ¿Son valores razonables para el proyecto? | |
-| 5 | ¿Cómo se crea el primer admin en un ambiente nuevo? | No hay endpoint público para esto. Se definió que hay que hacer un INSERT directo en la DB con un hash BCrypt. ¿Se documenta el hash de una contraseña de ejemplo para simplificar el setup inicial? | |
+| 1 | ~~¿Los endpoints de lectura (categories, products, variants, reviews, coupons, tracking) deben ser públicos o requerir token?~~ | Actualmente todos requieren auth por `.anyRequest().authenticated()` en `SecurityConfig`. Si se decide que son públicos, hay que agregarlos al `permitAll()` y actualizar la colección de Postman. | ✅ **RESUELTO** — Solo los endpoints de catálogo (`categories`, `products`, `variants`, `reviews` y sus variantes anidadas) se hicieron públicos. El resto (coupons, deliveries, tracking, support tickets) sigue con token porque expone datos sensibles. Implementado con `requestMatchers(HttpMethod.GET, ...).permitAll()` en `SecurityConfig`. `CategoriesController.getCategories` ajustado para tolerar `Authentication == null` (sin token devuelve solo activas; admin con token sigue viendo todas). Tests en `SecurityAccessTest` cubren los 3 escenarios: GETs públicos sin 401, mutaciones siguen requiriendo token, y endpoints sensibles no afectados. |
+| 2 | ~~¿La colección de Postman se actualiza agregando `Authorization: Bearer {{token}}` a los requests que lo necesitan, o se cambia `SecurityConfig` para hacer algunos endpoints verdaderamente públicos?~~ | ~30 requests en la colección no tienen el header. Ambos caminos son válidos, depende de la decisión anterior. | ✅ **RESUELTO** — Se hicieron ambas cosas: 1) Variable de colección `token` agregada (vacía por defecto). 2) Script post-request en `Login` y `Registrar usuario` que captura `pm.response.json().token` y lo guarda con `pm.collectionVariables.set('token', ...)`. 3) Header `Authorization: Bearer {{token}}` agregado a los 54 requests que lo necesitaban. Los 12 que quedan sin header son intencionales: `/auth/register`, `/auth/login` (no necesitan token) y los 10 GETs públicos del punto 1. **Flujo de uso:** ejecutar `Login` una vez, el resto de los requests usan el token automáticamente. |
+| 3 | ~~¿El logout debe invalidar solo la sesión actual o todas las sesiones del usuario?~~ | El código actual (`sessionRepository::deleteByUser`) borra todas las sesiones al hacer logout desde cualquier dispositivo. Si el usuario está logueado desde el celular y la PC, al cerrar sesión desde uno se cierra en ambos. | ✅ **DECISIÓN DE NEGOCIO** — Se mantiene el comportamiento actual: el logout cierra **todas** las sesiones del usuario, no solo la actual. Razón: para el alcance del proyecto, prioriza simplicidad y el caso "pánico" (si te robaron un dispositivo, un solo logout te saca de todos lados). **A futuro** se quiere iterar hacia logout por sesión + endpoint aparte `POST /auth/logout-all` para el caso de pánico. Implica identificar la sesión activa por `jti` del JWT o por un ID en la tabla `sessions`. |
+| 4 | ~~¿Los límites de rate limiting son adecuados?~~ | Actualmente: 10 req/min para `/auth/*`, 100 req/min para el resto (por IP). ¿Son valores razonables para el proyecto? | ✅ **RESUELTO** — Se mantienen los valores actuales (10 req/min para `/auth/*`, 100 req/min para el resto). En las pruebas de la colección de Postman y los flujos manuales no se observaron falsos positivos ni fricciones. En un escenario productivo con tráfico real se reajustaría con métricas (ver dashboards), pero para el alcance del proyecto los valores son adecuados. |
+| 5 | ~~¿Cómo se crea el primer admin en un ambiente nuevo?~~ | No hay endpoint público para esto. Se definió que hay que hacer un INSERT directo en la DB con un hash BCrypt. ¿Se documenta el hash de una contraseña de ejemplo para simplificar el setup inicial? | ✅ **RESUELTO** — Se agregó el archivo `seed-users.sql` con INSERTs idempotentes (`IF NOT EXISTS`) para un admin (`admin@mail.com` / `Test1234!`) y un seller (`seller_test@test.com` / `Test1234!`) de prueba. Se agregó el target `make seed-db` que ejecuta ese archivo dentro del contenedor de SQL Server e imprime las credenciales en la terminal. **Flujo de primera vez:** 1) `make start-all` (levanta DB + arranca app, Hibernate crea las tablas), 2) en otra terminal, `make seed-db` (carga los usuarios de prueba). Las credenciales están documentadas en una sección dedicada del README con un warning de "solo para desarrollo". No se encadenó `seed-db` directamente a `start-all` porque `start-app` es bloqueante y las tablas no existen hasta que la app arranca por primera vez. |
 | 6 | ~~**BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`.~~ | ✅ **RESUELTO** — `register` ahora crea una `Session` y la persiste igual que `login`. El token del register funciona directamente en endpoints autenticados sin necesidad de hacer login por separado. | |
 | 7 | ~~**COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente.~~ | ✅ **RESUELTO** — cambiado `noContent()` → `notFound()` en `UsersController.java` y `ProductsController.java`. | |
 | 8 | ~~**BUG**: `POST /products` sin `@Valid` ni validaciones → 500 con name null.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ProductsController`, `@NotBlank` en `name` y `@Positive` en `categoryId` en `ProductRequest`. | |
@@ -582,3 +612,12 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 37 | ~~**BUG**: `DELETE /deliveries/{id}` con checkpoints de seguimiento asociados devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteDelivery` en `DeliveryServiceImpl` ahora elimina primero los registros de `ShipmentTracking` con `shipmentTrackingRepository.deleteAll(findByDeliveryId(...))` antes de borrar la delivery. `ShipmentTrackingRepository` inyectado vía `@RequiredArgsConstructor`. Test `deleteDelivery_deberiaEliminar_cuandoIdExiste` actualizado para mockear el repositorio. |
 | 38 | ~~**BUG**: `DELETE /orders/{id}` con entregas que tienen checkpoints de seguimiento devuelve 500 (FK constraint en `SHIPMENT_TRACKING.delivery_id`).~~ | ✅ **RESUELTO** — `deleteOrder` en `OrderServiceImpl` ahora, antes de eliminar las deliveries, elimina sus tracking checkpoints iterando sobre las deliveries de la orden. `ShipmentTrackingRepository` inyectado vía `@Autowired`. |
 | 39 | ~~**COMPORTAMIENTO**: `GET /sessions/user/{userId}` con userId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getSessionsByUser` en `SessionServiceImpl` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. Test `getSessionsByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste` agregado en `SessionServiceTest`. |
+| 40 | ~~**BUG**: `GET /coupons/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `CouponsController.java`. |
+| 41 | ~~**BUG**: `POST /coupons` con body vacío devuelve 404 (buscaba discountId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Valid` en `createCoupon` en `CouponsController`, `@Positive` en `discountId` y `@NotBlank` en `code` en `CouponRequest`. |
+| 42 | ~~**BUG**: `POST /coupons` con código duplicado devuelve 500 (DB unique constraint) en vez de 409.~~ | ✅ **RESUELTO** — `createCoupon` en `CouponServiceImpl` ahora verifica `couponRepository.findByCode` y lanza `DuplicateException` (409) si el código ya existe. Test `createCoupon_deberiaLanzarDuplicateException_cuandoCodigoYaExiste` agregado en `CouponServiceTest`. |
+| 43 | ~~**DISEÑO**: `CouponsController` no tenía `@PreAuthorize` en POST y DELETE.~~ | ✅ **RESUELTO** — `POST /coupons` y `DELETE /coupons/{id}` ahora requieren `hasRole('admin')`. |
+| 44 | ~~**DECISIÓN PENDIENTE**: `GET /coupons/validate/{code}` — ¿qué roles pueden validar cupones?~~ | ✅ **RESUELTO** — `@PreAuthorize("hasAnyRole('buyer','admin')")`: buyers lo usan en el flujo de compra, admins pueden validar para soporte/testing. |
+| 45 | **PENDIENTE (mejora futura)**: parametrizar las credenciales del seed con variables de entorno. | Hoy `seed-users.sql` tiene los emails y hashes BCrypt hardcodeados (`admin@mail.com` / `seller_test@test.com`, ambos con password `Test1234!`). Mientras el proyecto sea académico esto es cómodo, pero cuando deje de serlo conviene migrar a variables tipo `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` (en `.env.example`) y que `seed-users.sql` las consuma vía `sqlcmd -v` (`$(INITIAL_ADMIN_EMAIL)` dentro del SQL). Eso permite sobrescribir credenciales sin tocar archivos versionados. Implica: 1) agregar las variables a `.env.example`, 2) parametrizar el SQL, 3) ajustar el target `seed-db` del Makefile para pasar las `-v`, 4) actualizar el README. |
+| 46 | ~~**PENDIENTE (revisar seguridad)**: `DiscountsController` no tiene `@PreAuthorize` en POST/PUT/DELETE.~~ | ✅ **RESUELTO** — agregado `@PreAuthorize("hasRole('admin')")` en POST/PUT/DELETE de `DiscountsController`. No se restringe a "seller del producto" porque el modelo no tiene relación `Product → seller` (solo categoría); por simplicidad y consistencia con cupones queda solo para admin. Tests de regresión 401/403 (sin token, buyer, seller) agregados en `SecurityAccessTest`. |
+| 47 | ~~**PENDIENTE (revisar seguridad)**: `AddressesController` tiene POST/PUT/DELETE sin `@PreAuthorize`.~~ | ✅ **RESUELTO** — POST/PUT/DELETE ahora requieren autenticación. POST: el `userId` del body debe coincidir con el del usuario autenticado, o ser admin. PUT/DELETE: el usuario autenticado debe ser dueño de la address o admin. Helper privado `requireSelfOrAdmin(targetUserId, auth)` en `AddressesController` lanza `AccessDeniedException` (→ 403) cuando no aplica. Tests 401 sin token agregados en `SecurityAccessTest`. |
+| 48 | ~~**PENDIENTE (revisar seguridad)**: `SessionsController` no tiene ningún `@PreAuthorize`.~~ | ✅ **RESUELTO** — `SessionsController` eliminado. La gestión de sesiones queda interna: las crea/cierra `AuthController` (login/logout) y `JwtAuthFilter` las valida en cada request. `SessionService` se mantiene porque lo consumen esos componentes y los tests existentes. Tests de regresión: `GET /sessions/user/1` y `DELETE /sessions/1` ahora devuelven 401 sin token (anyRequest().authenticated() en `SecurityConfig`). |

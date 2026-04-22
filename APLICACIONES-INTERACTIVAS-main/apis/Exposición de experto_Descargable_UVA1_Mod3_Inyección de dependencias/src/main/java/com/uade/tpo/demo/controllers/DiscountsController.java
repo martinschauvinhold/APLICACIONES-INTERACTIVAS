@@ -28,30 +28,25 @@ public class DiscountsController {
     private DiscountService discountService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<List<Discount>> getDiscounts() {
         return ResponseEntity.ok(discountService.getDiscounts());
     }
 
     @GetMapping("/{discountId}")
-    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<Discount> getDiscountById(@PathVariable int discountId) {
         Optional<Discount> result = discountService.getDiscountById(discountId);
-        if (result.isPresent()) {
-            return ResponseEntity.ok(result.get());
-        }
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('seller', 'admin')")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createDiscount(@RequestBody DiscountRequest request) {
         Discount result = discountService.createDiscount(request);
         return ResponseEntity.created(URI.create("/discounts/" + result.getId())).body(result);
     }
 
     @PutMapping("/{discountId}")
-    @PreAuthorize("hasAnyRole('seller', 'admin')")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> updateDiscount(@PathVariable int discountId,
             @RequestBody DiscountRequest request) {
         Discount updated = discountService.updateDiscount(discountId, request);

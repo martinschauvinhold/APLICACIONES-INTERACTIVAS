@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,37 +28,32 @@ public class CouponsController {
     private CouponService couponService;
 
     @GetMapping
-    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<List<Coupon>> getCoupons() {
         return ResponseEntity.ok(couponService.getCoupons());
     }
 
     @GetMapping("/{couponId}")
-    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Coupon> getCouponById(@PathVariable int couponId) {
         Optional<Coupon> result = couponService.getCouponById(couponId);
-        if (result.isPresent()) {
-            return ResponseEntity.ok(result.get());
-        }
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('admin')")
     @PostMapping
-    @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createCoupon(@RequestBody CouponRequest request) {
+    public ResponseEntity<Object> createCoupon(@Valid @RequestBody CouponRequest request) {
         Coupon result = couponService.createCoupon(request);
         return ResponseEntity.created(URI.create("/coupons/" + result.getId())).body(result);
     }
 
-    @DeleteMapping("/{couponId}")
     @PreAuthorize("hasRole('admin')")
+    @DeleteMapping("/{couponId}")
     public ResponseEntity<Object> deleteCoupon(@PathVariable int couponId) {
         couponService.deleteCoupon(couponId);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAnyRole('buyer','admin')")
     @GetMapping("/validate/{code}")
-    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<Coupon> validateCoupon(@PathVariable String code) {
         Coupon coupon = couponService.validateCoupon(code);
         return ResponseEntity.ok(coupon);

@@ -82,6 +82,7 @@ class AddressServiceTest {
         var user = User.builder().id(5).build();
         var addresses = List.of(
                 Address.builder().id(1).user(user).street("Av. Corrientes 1234").build());
+        when(userRepository.existsById(5)).thenReturn(true);
         when(addressRepository.findByUserId(5)).thenReturn(addresses);
 
         // Act
@@ -89,6 +90,17 @@ class AddressServiceTest {
 
         // Assert
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getAddressesByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste() {
+        // Arrange
+        when(userRepository.existsById(9999)).thenReturn(false);
+
+        // Act + Assert
+        assertThatThrownBy(() -> addressService.getAddressesByUser(9999))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("User con id 9999 no encontrado");
     }
 
     @Test

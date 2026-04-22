@@ -32,7 +32,7 @@ public class CategoriesController {
 
     @GetMapping
     public ResponseEntity<ArrayList<Category>> getCategories(Authentication auth) {
-        boolean isAdmin = auth.getAuthorities().stream()
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
         ArrayList<Category> categories = isAdmin
                 ? categoryService.getCategories()
