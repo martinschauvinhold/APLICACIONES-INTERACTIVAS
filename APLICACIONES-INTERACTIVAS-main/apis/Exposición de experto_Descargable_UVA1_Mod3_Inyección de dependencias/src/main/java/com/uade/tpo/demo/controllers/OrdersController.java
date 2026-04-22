@@ -38,7 +38,7 @@ public class OrdersController {
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Order> getOrderById(@PathVariable int orderId) {
         Optional<Order> result = orderService.getOrderById(orderId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")

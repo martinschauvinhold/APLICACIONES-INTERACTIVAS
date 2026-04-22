@@ -25,6 +25,7 @@ import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
 import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.entity.Payment;
+import com.uade.tpo.demo.entity.PaymentStatus;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.User;
@@ -34,11 +35,13 @@ import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.AddressRepository;
 import com.uade.tpo.demo.repository.CouponRepository;
+import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.InventoryRepository;
 import com.uade.tpo.demo.repository.OrderItemRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
 import com.uade.tpo.demo.repository.PaymentRepository;
 import com.uade.tpo.demo.repository.PriceTierRepository;
+import com.uade.tpo.demo.repository.ProductReturnRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
@@ -54,6 +57,8 @@ class OrderServiceTest {
     @Mock private PriceTierRepository priceTierRepository;
     @Mock private CouponRepository couponRepository;
     @Mock private PaymentRepository paymentRepository;
+    @Mock private DeliveryRepository deliveryRepository;
+    @Mock private ProductReturnRepository productReturnRepository;
     @Mock private DiscountService discountService;
     @Mock private CouponService couponService;
 
@@ -105,6 +110,7 @@ class OrderServiceTest {
     void getOrdersByUser_deberiaRetornarOrdenesFiltradas() {
         // Arrange
         var orders = List.of(Order.builder().id(1).status(OrderStatus.PENDING).build());
+        when(userRepository.existsById(5)).thenReturn(true);
         when(orderRepository.findByUserId(5)).thenReturn(orders);
 
         // Act
@@ -112,6 +118,17 @@ class OrderServiceTest {
 
         // Assert
         assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getOrdersByUser_deberiaLanzarNotFoundException_cuandoUserNoExiste() {
+        // Arrange
+        when(userRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.getOrdersByUser(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -259,6 +276,12 @@ class OrderServiceTest {
 
     @Test
     void deleteOrder_deberiaEliminar() {
+        // Arrange
+        when(orderItemRepository.findByOrderId(1)).thenReturn(List.of());
+        when(paymentRepository.findByOrderId(1)).thenReturn(List.of());
+        when(deliveryRepository.findByOrderId(1)).thenReturn(List.of());
+        when(productReturnRepository.findByOrderId(1)).thenReturn(List.of());
+
         // Act
         orderService.deleteOrder(1);
 
@@ -287,7 +310,7 @@ class OrderServiceTest {
         var variant = ProductVariant.builder().id(1).build();
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(0).build();
-        var payment = Payment.builder().id(1).paymentStatus("COMPLETED").build();
+        var payment = Payment.builder().id(1).paymentStatus(PaymentStatus.COMPLETED).build();
 
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         when(orderItemRepository.findByOrderId(1)).thenReturn(List.of(item));
@@ -303,7 +326,7 @@ class OrderServiceTest {
         // Assert
         assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(inventory.getStockQuantity()).isEqualTo(2);
-        assertThat(payment.getPaymentStatus()).isEqualTo("REFUNDED");
+        assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.REFUNDED);
     }
 
     @Test

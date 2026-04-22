@@ -43,6 +43,7 @@ class OrderItemServiceTest {
         var items = List.of(
                 OrderItem.builder().id(1).order(order).quantity(2).build(),
                 OrderItem.builder().id(2).order(order).quantity(1).build());
+        when(orderRepository.existsById(1)).thenReturn(true);
         when(orderItemRepository.findByOrderId(1)).thenReturn(items);
 
         // Act
@@ -50,6 +51,17 @@ class OrderItemServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getItemsByOrder_deberiaLanzarNotFoundException_cuandoOrdenNoExiste() {
+        // Arrange
+        when(orderRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderItemService.getItemsByOrder(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test

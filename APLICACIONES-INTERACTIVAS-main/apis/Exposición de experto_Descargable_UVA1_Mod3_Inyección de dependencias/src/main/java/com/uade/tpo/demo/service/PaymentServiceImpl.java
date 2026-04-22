@@ -15,8 +15,9 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
 import com.uade.tpo.demo.entity.OrderStatus;
-import com.uade.tpo.demo.entity.PaymentResultStatus;
 import com.uade.tpo.demo.entity.Payment;
+import com.uade.tpo.demo.entity.PaymentResultStatus;
+import com.uade.tpo.demo.entity.PaymentStatus;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
 import com.uade.tpo.demo.entity.dto.PaymentResult;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
@@ -111,7 +112,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .order(order)
                 .paymentMethod(paymentRequest.getPaymentMethod())
                 .transactionId(result.getTransactionId())
-                .paymentStatus(result.getStatus().name())
+                .paymentStatus(PaymentStatus.valueOf(result.getStatus().name()))
                 .paidAt(new Date())
                 .build();
 

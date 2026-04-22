@@ -32,7 +32,7 @@ public class OrderItemsController {
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<OrderItem> getItemById(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{itemId}")

@@ -21,8 +21,9 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
 import com.uade.tpo.demo.entity.OrderStatus;
-import com.uade.tpo.demo.entity.PaymentResultStatus;
 import com.uade.tpo.demo.entity.Payment;
+import com.uade.tpo.demo.entity.PaymentResultStatus;
+import com.uade.tpo.demo.entity.PaymentStatus;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
 import com.uade.tpo.demo.entity.dto.PaymentResult;
@@ -49,8 +50,8 @@ class PaymentServiceTest {
     void getPayments_deberiaRetornarListaCompleta() {
         // Arrange
         var payments = List.of(
-                Payment.builder().id(1).paymentStatus("COMPLETED").build(),
-                Payment.builder().id(2).paymentStatus("FAILED").build());
+                Payment.builder().id(1).paymentStatus(PaymentStatus.COMPLETED).build(),
+                Payment.builder().id(2).paymentStatus(PaymentStatus.FAILED).build());
         when(paymentRepository.findAll()).thenReturn(payments);
 
         // Act
@@ -63,7 +64,7 @@ class PaymentServiceTest {
     @Test
     void getPaymentById_deberiaRetornarPago_cuandoIdExiste() {
         // Arrange
-        var payment = Payment.builder().id(1).paymentStatus("COMPLETED").build();
+        var payment = Payment.builder().id(1).paymentStatus(PaymentStatus.COMPLETED).build();
         when(paymentRepository.findById(1)).thenReturn(Optional.of(payment));
 
         // Act
@@ -71,7 +72,7 @@ class PaymentServiceTest {
 
         // Assert
         assertThat(result).isPresent();
-        assertThat(result.get().getPaymentStatus()).isEqualTo("COMPLETED");
+        assertThat(result.get().getPaymentStatus()).isEqualTo(PaymentStatus.COMPLETED);
     }
 
     @Test
@@ -89,7 +90,7 @@ class PaymentServiceTest {
     @Test
     void getPaymentsByOrder_deberiaRetornarListaFiltrada() {
         // Arrange
-        var payments = List.of(Payment.builder().id(1).paymentStatus("COMPLETED").build());
+        var payments = List.of(Payment.builder().id(1).paymentStatus(PaymentStatus.COMPLETED).build());
         when(orderRepository.existsById(5)).thenReturn(true);
         when(paymentRepository.findByOrderId(5)).thenReturn(payments);
 
@@ -119,7 +120,7 @@ class PaymentServiceTest {
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(10).build();
         var paymentResult = PaymentResult.builder().status(PaymentResultStatus.COMPLETED).transactionId("TXN-001").build();
-        var savedPayment = Payment.builder().id(1).paymentStatus("COMPLETED").transactionId("TXN-001").build();
+        var savedPayment = Payment.builder().id(1).paymentStatus(PaymentStatus.COMPLETED).transactionId("TXN-001").build();
 
         var request = new PaymentRequest();
         request.setOrderId(1);
@@ -137,7 +138,7 @@ class PaymentServiceTest {
         var result = paymentService.processPayment(request, false);
 
         // Assert
-        assertThat(result.getPaymentStatus()).isEqualTo("COMPLETED");
+        assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.COMPLETED);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
         verify(inventoryRepository).saveAll(anyList());
         verify(orderRepository).save(any());
@@ -151,7 +152,7 @@ class PaymentServiceTest {
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(10).build();
         var paymentResult = PaymentResult.builder().status(PaymentResultStatus.FAILED).build();
-        var savedPayment = Payment.builder().id(1).paymentStatus("FAILED").build();
+        var savedPayment = Payment.builder().id(1).paymentStatus(PaymentStatus.FAILED).build();
 
         var request = new PaymentRequest();
         request.setOrderId(1);
@@ -167,7 +168,7 @@ class PaymentServiceTest {
         var result = paymentService.processPayment(request, true);
 
         // Assert
-        assertThat(result.getPaymentStatus()).isEqualTo("FAILED");
+        assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.FAILED);
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
     }
 
