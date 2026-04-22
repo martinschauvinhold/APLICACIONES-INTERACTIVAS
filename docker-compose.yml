@@ -1,0 +1,57 @@
+# -------------------------------------------------------------------
+# Dos motores de base de datos disponibles, seleccionables con
+# --profile:
+#   docker compose --profile mssql up -d   → SQL Server (default)
+#   docker compose --profile mysql up -d   → MySQL
+#
+# Cada servicio tiene su propio volumen, así que podés alternar
+# entre motores sin perder datos del otro.
+# -------------------------------------------------------------------
+
+services:
+  sqlserver:
+    profiles: ["mssql"]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ecommerce-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong@Passw0rd"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -No -Q 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mysql:
+    profiles: ["mysql"]
+    image: mysql:8.0
+    container_name: ecommerce-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "YourStrong@Passw0rd"
+      MYSQL_DATABASE: "ecommerce"
+      MYSQL_USER: "appuser"
+      MYSQL_PASSWORD: "App12345!"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pYourStrong@Passw0rd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  sqlserver_data:
+    driver: local
+  mysql_data:
+    driver: local
