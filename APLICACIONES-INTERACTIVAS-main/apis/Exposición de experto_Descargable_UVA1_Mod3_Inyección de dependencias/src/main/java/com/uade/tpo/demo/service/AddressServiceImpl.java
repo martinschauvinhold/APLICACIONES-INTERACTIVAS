@@ -33,6 +33,8 @@ public class AddressServiceImpl implements AddressService {
     }
 
     public List<Address> getAddressesByUser(int userId) {
+        if (!userRepository.existsById(userId))
+            throw new NotFoundException("User", userId);
         return addressRepository.findByUserId(userId);
     }
 

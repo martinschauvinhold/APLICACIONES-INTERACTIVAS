@@ -37,7 +37,7 @@ public class WarehousesController {
     @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Warehouse> getWarehouseById(@PathVariable int warehouseId) {
         Optional<Warehouse> result = warehouseService.getWarehouseById(warehouseId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
