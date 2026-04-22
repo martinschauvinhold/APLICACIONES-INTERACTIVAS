@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +33,7 @@ public class SupportTicketController {
     private final MessageService messageService;
 
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<List<SupportTicket>> getAll() {
         return ResponseEntity.ok(ticketService.getAll());
     }
@@ -42,12 +44,14 @@ public class SupportTicketController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('buyer', 'seller')")
     public ResponseEntity<SupportTicket> create(@Valid @RequestBody SupportTicketRequest request) {
         SupportTicket created = ticketService.create(request);
         return ResponseEntity.created(URI.create("/support/tickets/" + created.getId())).body(created);
     }
 
     @PutMapping("/{ticketId}/status")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<SupportTicket> updateStatus(@PathVariable Integer ticketId,
                                                        @Valid @RequestBody TicketStatusRequest request) {
         return ResponseEntity.ok(ticketService.updateStatus(ticketId, request.status()));

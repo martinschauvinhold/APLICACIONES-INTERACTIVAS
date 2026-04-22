@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,12 +36,11 @@ public class CategoriesController {
     @GetMapping("/{categoryId}")
     public ResponseEntity<Category> getCategoryById(@PathVariable int categoryId) {
         Optional<Category> result = categoryService.getCategoryById(categoryId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createCategory(@RequestBody CategoryRequest categoryRequest)
             throws CategoryDuplicateException {
         Category result = categoryService.createCategory(categoryRequest.getDescription());
@@ -48,6 +48,7 @@ public class CategoriesController {
     }
 
     @PutMapping("/{categoryId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> updateCategory(@PathVariable int categoryId,
             @RequestBody CategoryRequest categoryRequest) {
         Optional<Category> result = categoryService.getCategoryById(categoryId);
@@ -59,6 +60,7 @@ public class CategoriesController {
     }
 
     @DeleteMapping("/{categoryId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteCategory(@PathVariable int categoryId) {
         Optional<Category> result = categoryService.getCategoryById(categoryId);
         if (result.isPresent()) {

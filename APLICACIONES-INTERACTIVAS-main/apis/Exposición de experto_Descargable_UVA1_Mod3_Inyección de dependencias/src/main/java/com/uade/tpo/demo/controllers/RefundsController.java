@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("refunds")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('admin')")
 public class RefundsController {
 
     private final RefundService refundService;
@@ -47,6 +49,5 @@ public class RefundsController {
     public ResponseEntity<Refund> updateStatus(@PathVariable Integer refundId,
                                                 @Valid @RequestBody RefundStatusRequest request) {
         return ResponseEntity.ok(refundService.updateStatus(refundId, request.status()));
-
     }
 }

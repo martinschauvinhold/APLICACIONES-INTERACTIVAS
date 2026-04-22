@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -159,5 +160,35 @@ class AuthControllerTest {
     void logout_deberiaRetornar401_cuandoNoAutenticado() throws Exception {
         mockMvc.perform(post("/auth/logout"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    // ── JwtAuthFilter: blacklist de sesión ────────────────────────────────────
+
+    @Test
+    void jwtFilter_deberiaRetornar401_cuandoTokenValidoPeroSesionEliminada() throws Exception {
+        when(jwtService.extractEmail(anyString())).thenReturn("juan@mail.com");
+        when(jwtService.isTokenValid(anyString())).thenReturn(true);
+        when(sessionRepository.existsByUserEmail("juan@mail.com")).thenReturn(false);
+
+        var usuario = User.builder().id(1).email("juan@mail.com").passwordHash("hashed").role(Role.buyer).build();
+        when(userRepository.findByEmail("juan@mail.com")).thenReturn(Optional.of(usuario));
+
+        mockMvc.perform(post("/auth/logout")
+                .header("Authorization", "Bearer token.post.logout"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void jwtFilter_deberiaAutenticar_cuandoTokenValidoYSesionActiva() throws Exception {
+        when(jwtService.extractEmail(anyString())).thenReturn("juan@mail.com");
+        when(jwtService.isTokenValid(anyString())).thenReturn(true);
+        when(sessionRepository.existsByUserEmail("juan@mail.com")).thenReturn(true);
+
+        var usuario = User.builder().id(1).email("juan@mail.com").passwordHash("hashed").role(Role.buyer).build();
+        when(userRepository.findByEmail("juan@mail.com")).thenReturn(Optional.of(usuario));
+
+        mockMvc.perform(post("/auth/logout")
+                .header("Authorization", "Bearer token.activo"))
+                .andExpect(status().isNoContent());
     }
 }
