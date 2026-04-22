@@ -257,10 +257,24 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 54 | GET | `/payments` | admin | ✅ | | |
-| 55 | GET | `/payments/{id}` | buyer o admin | ✅ | | |
-| 56 | GET | `/payments/order/{orderId}` | buyer o admin | ✅ | | |
-| 57 | POST | `/payments` | buyer | ✅ | | Probar con `simulateFailure=true` también |
+| 54 | GET | `/payments` | admin | ✅ | ✅ OK | 200 + lista de pagos |
+| 54b | GET | `/payments` | Sin token | — | ✅ OK | 401 |
+| 54c | GET | `/payments` | buyer | — | ✅ OK | 403 |
+| 54d | GET | `/payments` | seller | — | ✅ OK | 403 |
+| 55 | GET | `/payments/{id}` | buyer + ID existente | ✅ | ✅ OK | 200 con payment |
+| 55b | GET | `/payments/{id}` | buyer + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 55c | GET | `/payments/{id}` | Sin token | — | ✅ OK | 401 |
+| 55d | GET | `/payments/{id}` | seller | — | ✅ OK | 403 |
+| 56 | GET | `/payments/order/{orderId}` | buyer + orderId existente | ✅ | ✅ OK | 200 + lista de pagos |
+| 56b | GET | `/payments/order/{orderId}` | buyer + orderId inexistente | — | ⚠️ Comportamiento inesperado | 200 + `[]` — no verifica si la orden existe; debería ser 404 |
+| 56c | GET | `/payments/order/{orderId}` | Sin token | — | ✅ OK | 401 |
+| 56d | GET | `/payments/order/{orderId}` | seller | — | ✅ OK | 403 |
+| 57 | POST | `/payments` | buyer + orden PENDING | ✅ | ✅ OK | 201 + `paymentStatus: COMPLETED`, orden pasa a PAID |
+| 57b | POST | `/payments` | buyer + simulateFailure=true | — | ✅ OK | 201 + `paymentStatus: FAILED`, orden sigue PENDING (puede reintentar) |
+| 57c | POST | `/payments` | Sin token | — | ✅ OK | 401 |
+| 57d | POST | `/payments` | seller | — | ✅ OK | 403 |
+| 57e | POST | `/payments` | buyer + orderId inexistente | — | ✅ OK | 404 `Order con id 9999 no encontrado` |
+| 57f | POST | `/payments` | buyer + orden ya PAID | — | ✅ OK | 422 `Solo se pueden pagar ordenes en estado PENDING. Estado actual: PAID` |
 
 ---
 
@@ -412,3 +426,6 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 17 | ~~**COMPORTAMIENTO**: `GET /variants/product/{productId}` con productId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getVariantsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. |
 | 18 | ~~**BUG**: `GET /inventory/{id}` con ID inexistente devolvía 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `InventoryController`. |
 | 19 | ~~**COMPORTAMIENTO**: `GET /inventory/variant/{variantId}` con variantId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getInventoryByVariant` ahora verifica `productVariantRepository.existsById` y lanza `NotFoundException` (404) si la variante no existe. | |
+| 20 | ~~**BUG**: `GET /payments/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `PaymentsController.java`. |
+| 21 | ~~**COMPORTAMIENTO**: `GET /payments/order/{orderId}` con orderId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getPaymentsByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. |
+| 22 | ~~**ERROR EN SQL**: `admin_test` tenía email `admin_test@test.com` en el SQL pero `admin@mail.com` en la DB. Hash era correcto, el email estaba mal.~~ | ✅ **RESUELTO** — corregido el email en ambos `create_database(apis).sql`. Credenciales válidas: `admin@mail.com` / `Test1234!`. |

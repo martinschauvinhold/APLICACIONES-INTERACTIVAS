@@ -37,7 +37,7 @@ public class PaymentsController {
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Payment> getPaymentById(@PathVariable int paymentId) {
         Optional<Payment> result = paymentService.getPaymentById(paymentId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/order/{orderId}")

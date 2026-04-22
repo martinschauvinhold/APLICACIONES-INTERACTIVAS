@@ -23,9 +23,11 @@ Prueba una sección de endpoints del e-commerce de forma estructurada y registra
 
 ## Flujo de prueba
 
-### Paso 1 — Obtener token de prueba
+### Paso 1 — Obtener tokens de prueba
 
-Registrar un usuario de prueba (o hacer login si ya existe). Guardar el token para usarlo en los requests que lo requieran:
+#### Buyer (registro automático)
+
+Registrar un usuario de prueba buyer (o hacer login si ya existe):
 
 ```bash
 curl -s -X POST http://localhost:8080/auth/register \
@@ -33,9 +35,35 @@ curl -s -X POST http://localhost:8080/auth/register \
   -d '{"username":"tester_<seccion>","email":"tester_<seccion>@mail.com","password":"password123","firstName":"Test","lastName":"User"}'
 ```
 
-Si devuelve 409 (ya existe), hacer login en su lugar.
+Si devuelve 409 (ya existe), hacer login con las mismas credenciales en `/auth/login`.
 
-Si la sección requiere rol admin o seller, indicar al usuario que provea un token con ese rol, ya que no se puede crear uno por API sin un admin previo.
+#### Admin y Seller (credenciales del SQL)
+
+**No pedirle al usuario las credenciales.** Buscarlas directamente en el archivo SQL del proyecto:
+
+```bash
+grep -A1 "USUARIOS DE PRUEBA\|INSERT INTO USERS" create_database\(apis\).sql | grep VALUES
+```
+
+El archivo tiene usuarios de prueba con la contraseña comentada (ej: `-- password: Test1234!`). Hacer login con esas credenciales:
+
+```bash
+curl -s -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"<email_del_sql>","password":"<password_del_comentario>"}'
+```
+
+**Credenciales vigentes** (password `Test1234!` para todos):
+| rol | email |
+|-----|-------|
+| seller | `seller_test@test.com` |
+| admin | `admin@mail.com` |
+
+Si el login falla (401), el email o el hash en la DB no coincide con el del SQL. Pedirle al usuario que revise qué usuarios existen en la tabla `USERS` y que actualice el SQL con las credenciales correctas antes de continuar.
+
+Si aun así falla (hash incorrecto en DB), en ese caso:
+- Documentar en TESTING.md que el test de ese rol quedó pendiente
+- Agregar en "Preguntas abiertas": hash del usuario `<rol>` no coincide con `<password>`, re-insertar con `INSERT INTO USERS ...` y el hash BCrypt correcto
 
 ### Paso 2 — Ejecutar los casos de prueba
 
