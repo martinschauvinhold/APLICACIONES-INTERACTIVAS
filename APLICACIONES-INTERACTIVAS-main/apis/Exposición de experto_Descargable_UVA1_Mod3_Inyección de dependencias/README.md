@@ -9,14 +9,35 @@ API REST construida con Spring Boot 3 y SQL Server.
 Si tenés `make` instalado, es la forma más simple de levantar todo:
 
 ```bash
-make start-all    # primera vez: levanta Docker, inicializa la DB y corre la app
-make start-app    # si Docker ya está corriendo
+# Primera vez (dos pasos, en terminales separadas):
+make start-all    # levanta Docker, inicializa la DB y corre la app
+make seed-db      # en otra terminal, una vez que veas "Started DemoApplication"
+
+# Uso normal:
+make start-app    # corre la app si Docker ya está corriendo
 make stop-db      # baja el contenedor
 make wipe-db      # baja el contenedor y BORRA los datos
 make run-tests    # corre los tests (no necesita Docker)
 ```
 
 Corré `make` sin argumentos para ver todos los comandos disponibles.
+
+> **Por qué dos pasos:** Hibernate crea las tablas al arrancar la app por primera vez (`ddl-auto=update`). El `seed-db` necesita que la tabla `USERS` exista, así que se corre después de que la app levantó por primera vez. En arranques posteriores no hace falta volver a seedear (los INSERTs son idempotentes vía `IF NOT EXISTS`).
+
+---
+
+## Credenciales de desarrollo
+
+Después de correr `make seed-db`, la base queda con dos usuarios listos para usar:
+
+| Rol | Email | Password |
+|-----|-------|----------|
+| `admin` | `admin@mail.com` | `Test1234!` |
+| `seller` | `seller_test@test.com` | `Test1234!` |
+
+> ⚠️ **Solo para desarrollo.** Estas credenciales están versionadas en el repositorio (`seed-users.sql`) para facilitar el setup en un proyecto académico. **No usarlas en un ambiente productivo.** Si en algún momento el proyecto se despliega, el primer paso es eliminar estos usuarios y crear admins reales con contraseñas seguras.
+
+Para registrar un usuario `buyer` desde la API: `POST /auth/register` (no requiere autenticación).
 
 ---
 
@@ -147,14 +168,7 @@ Hay tres roles: `buyer`, `seller`, `admin`.
 
 ### Crear el primer admin
 
-`POST /users` requiere un admin autenticado, así que el primer admin hay que insertarlo directo en la DB. Generá un hash BCrypt del password (por ejemplo en [bcrypt-generator.com](https://bcrypt-generator.com) o con cualquier herramienta) y ejecutá:
-
-```sql
-INSERT INTO USERS (username, email, password_hash, first_name, last_name, role, created_at)
-VALUES ('admin', 'admin@mail.com', '$2a$10$...hash_bcrypt_aqui...', 'Admin', 'Sistema', 'admin', GETDATE());
-```
-
-Una vez que tenés el primer admin, podés crear más admins/sellers desde la API:
+Ya está cubierto por `make seed-db` (ver sección [Credenciales de desarrollo](#credenciales-de-desarrollo)). Una vez que estás logueado con `admin@mail.com`, podés crear más admins/sellers desde la API:
 
 ```http
 POST /users

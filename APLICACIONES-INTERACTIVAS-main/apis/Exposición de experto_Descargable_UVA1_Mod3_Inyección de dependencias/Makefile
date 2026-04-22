@@ -22,11 +22,14 @@ RESET  = \033[0m
 help:
 	@printf "\n$(BOLD)  E-Commerce API — comandos Make$(RESET)\n\n"
 	@printf "  $(BOLD)Flujo recomendado (primera vez):$(RESET)\n"
-	@printf "    $(CYAN)make start-all$(RESET)       →  levanta Docker + inicia DB + corre la app\n"
+	@printf "    1. $(CYAN)make start-all$(RESET)    →  levanta Docker + inicia DB + corre la app\n"
+	@printf "    2. (en otra terminal, una vez que veas $(BOLD)\"Started DemoApplication\"$(RESET))\n"
+	@printf "       $(CYAN)make seed-db$(RESET)      →  carga admin + seller de prueba\n"
 	@printf "\n"
 	@printf "  $(BOLD)Comandos individuales:$(RESET)\n"
 	@printf "    $(CYAN)make start-db$(RESET)        →  levanta el contenedor de SQL Server y espera que esté listo\n"
 	@printf "    $(CYAN)make init-db$(RESET)         →  crea la base de datos y el usuario (idempotente)\n"
+	@printf "    $(CYAN)make seed-db$(RESET)         →  carga admin + seller de prueba (idempotente)\n"
 	@printf "    $(CYAN)make start-app$(RESET)       →  corre la app con perfil docker\n"
 	@printf "    $(CYAN)make stop-db$(RESET)         →  baja el contenedor\n"
 	@printf "    $(RED)make wipe-db$(RESET)         →  baja el contenedor y BORRA los datos (volumen)\n"
@@ -76,6 +79,15 @@ init-db:
 		    BEGIN CREATE USER appuser FOR LOGIN appuser END; \
 		    ALTER ROLE db_owner ADD MEMBER appuser;"
 	@printf "$(GREEN)[  db    ]$(RESET) Base de datos [E-commerce] y usuario appuser listos.\n"
+
+.PHONY: seed-db
+seed-db:
+	@printf "$(CYAN)[  db    ]$(RESET) Cargando datos iniciales (admin + seller de prueba)...\n"
+	docker exec -i $(CONTAINER) $(SQLCMD) -d "E-commerce" < seed-users.sql
+	@printf "$(GREEN)[  db    ]$(RESET) Seed listo. Credenciales de desarrollo:\n"
+	@printf "    $(BOLD)admin$(RESET)   →  email: $(YELLOW)admin@mail.com$(RESET)        password: $(YELLOW)Test1234!$(RESET)\n"
+	@printf "    $(BOLD)seller$(RESET)  →  email: $(YELLOW)seller_test@test.com$(RESET)  password: $(YELLOW)Test1234!$(RESET)\n"
+	@printf "    $(RED)⚠  Solo para desarrollo. Cambiar antes de producción.$(RESET)\n"
 
 # ─── Aplicación ───────────────────────────────────────────────────────────────
 
