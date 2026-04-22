@@ -35,6 +35,8 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public List<Delivery> getDeliveriesByOrder(Integer orderId) {
+        if (!orderRepository.existsById(orderId))
+            throw new NotFoundException("Order", orderId);
         return deliveryRepository.findByOrderId(orderId);
     }
 

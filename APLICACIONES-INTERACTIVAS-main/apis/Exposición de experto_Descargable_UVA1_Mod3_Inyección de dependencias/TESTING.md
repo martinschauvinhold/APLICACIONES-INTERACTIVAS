@@ -387,12 +387,32 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 64 | GET | `/deliveries` | seller o admin | ✅ | | |
-| 65 | GET | `/deliveries/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 66 | GET | `/deliveries/order/{orderId}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 67 | POST | `/deliveries` | seller o admin | ✅ | | |
-| 68 | PUT | `/deliveries/{id}` | seller o admin | ✅ | | |
-| 69 | DELETE | `/deliveries/{id}` | admin | ✅ | | |
+| 64 | GET | `/deliveries` | seller o admin | ✅ | ✅ OK | 200 + lista (seller y admin) |
+| 64b | GET | `/deliveries` | Sin token | — | ✅ OK | 401 |
+| 64c | GET | `/deliveries` | buyer | — | ✅ OK | 403 |
+| 65 | GET | `/deliveries/{id}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 — accesible con cualquier token (buyer, seller, admin) sin `@PreAuthorize` |
+| 65b | GET | `/deliveries/{id}` | admin + ID inexistente | — | ✅ OK | 404 `Delivery con id 9999 no encontrado` |
+| 65c | GET | `/deliveries/{id}` | Sin token | — | ✅ OK | 401 |
+| 66 | GET | `/deliveries/order/{orderId}` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista — accesible con cualquier token sin `@PreAuthorize` |
+| 66b | GET | `/deliveries/order/{orderId}` | admin + orderId inexistente | — | ✅ OK | 404 `Order con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia de la orden |
+| 66c | GET | `/deliveries/order/{orderId}` | Sin token | — | ✅ OK | 401 |
+| 67 | POST | `/deliveries` | seller o admin | ✅ | ✅ OK | 201 + delivery creado con `status: PENDING` por defecto |
+| 67b | POST | `/deliveries` | admin | — | ✅ OK | 201 |
+| 67c | POST | `/deliveries` | Sin token | — | ✅ OK | 401 |
+| 67d | POST | `/deliveries` | buyer | — | ✅ OK | 403 |
+| 67e | POST | `/deliveries` | seller + orderId inexistente | — | ✅ OK | 404 `Order con id 9999 no encontrado` |
+| 67f | POST | `/deliveries` | seller + body `{}` | — | ✅ OK | 400 `orderId: must not be null, shippingMethod: must not be blank, trackingNumber: must not be blank` |
+| 68 | PUT | `/deliveries/{id}` | seller o admin | ✅ | ✅ OK | 200 con datos actualizados |
+| 68b | PUT | `/deliveries/{id}` | admin | — | ✅ OK | 200 |
+| 68c | PUT | `/deliveries/9999` | admin + ID inexistente | — | ✅ OK | 404 |
+| 68d | PUT | `/deliveries/{id}` | Sin token | — | ✅ OK | 401 |
+| 68e | PUT | `/deliveries/{id}` | buyer | — | ✅ OK | 403 |
+| 68f | PUT | `/deliveries/{id}` | seller + enum inválido en `status` | — | ✅ OK | 400 `Cuerpo de la solicitud inválido o con valor no reconocido` — **bug corregido**: era 500, agregado handler `HttpMessageNotReadableException` en `GlobalExceptionHandler` |
+| 69 | DELETE | `/deliveries/{id}` | admin | ✅ | ✅ OK | 204 sin body |
+| 69b | DELETE | `/deliveries/9999` | admin + ID inexistente | — | ✅ OK | 404 |
+| 69c | DELETE | `/deliveries/{id}` | Sin token | — | ✅ OK | 401 |
+| 69d | DELETE | `/deliveries/{id}` | seller | — | ✅ OK | 403 |
+| 69e | DELETE | `/deliveries/{id}` | buyer | — | ✅ OK | 403 |
 
 ---
 
@@ -488,6 +508,7 @@ Estos endpoints están marcados con `@PreAuthorize` que permite acceso sin rol e
 | `GET /reviews` | |
 | `GET /coupons` | |
 | `GET /deliveries/{id}` | |
+| `GET /deliveries/order/{orderId}` | |
 | `GET /tracking/{id}` | |
 | `GET /support/tickets/{id}` | |
 
@@ -533,3 +554,5 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 32 | ~~**BUG**: `GET /reviews/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `ReviewsController.java`. |
 | 33 | ~~**COMPORTAMIENTO**: `GET /reviews/product/{productId}` con productId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getReviewsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. |
 | 34 | ~~**BUG**: `POST /reviews` con body vacío devuelve 404 (buscaba userId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ReviewsController`, `@Positive` en `userId`/`productId`, `@Min(1) @Max(5)` en `rating` en `ReviewRequest`. |
+| 35 | ~~**BUG**: `PUT /deliveries/{id}` con valor de enum inválido en `status` devuelve 500 en vez de 400.~~ | ✅ **RESUELTO** — agregado `@ExceptionHandler(HttpMessageNotReadableException.class)` en `GlobalExceptionHandler` que devuelve 400 con mensaje claro. Aplica globalmente a todos los endpoints que reciban enums. |
+| 36 | ~~**COMPORTAMIENTO**: `GET /deliveries/order/{orderId}` con orderId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getDeliveriesByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. Test `getDeliveriesByOrder_deberiaLanzarNotFoundException_cuandoOrderNoExiste` agregado en `DeliveryServiceTest`. |

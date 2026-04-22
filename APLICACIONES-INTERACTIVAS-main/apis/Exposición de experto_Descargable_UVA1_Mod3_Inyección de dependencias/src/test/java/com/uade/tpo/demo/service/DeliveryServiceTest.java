@@ -164,6 +164,7 @@ class DeliveryServiceTest {
         var deliveries = List.of(
                 Delivery.builder().id(1).order(order).shippingMethod("correo").build(),
                 Delivery.builder().id(2).order(order).shippingMethod("moto").build());
+        when(orderRepository.existsById(1)).thenReturn(true);
         when(deliveryRepository.findByOrderId(1)).thenReturn(deliveries);
 
         // Act
@@ -171,5 +172,17 @@ class DeliveryServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getDeliveriesByOrder_deberiaLanzarNotFoundException_cuandoOrderNoExiste() {
+        // Arrange
+        when(orderRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> deliveryService.getDeliveriesByOrder(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Order")
+                .hasMessageContaining("99");
     }
 }
