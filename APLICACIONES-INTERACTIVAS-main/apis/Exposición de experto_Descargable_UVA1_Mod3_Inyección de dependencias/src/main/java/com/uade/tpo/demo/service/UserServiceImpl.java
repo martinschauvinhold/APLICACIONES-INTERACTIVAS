@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.User;
@@ -18,6 +19,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public ArrayList<User> getUsers() {
         return new ArrayList<>(userRepository.findAll());
     }
@@ -30,7 +34,7 @@ public class UserServiceImpl implements UserService {
         User user = User.builder()
                 .username(userRequest.getUsername())
                 .email(userRequest.getEmail())
-                .passwordHash(userRequest.getPasswordHash())
+                .passwordHash(passwordEncoder.encode(userRequest.getPassword()))
                 .firstName(userRequest.getFirstName())
                 .lastName(userRequest.getLastName())
                 .role(userRequest.getRole())
@@ -45,7 +49,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("User", userId));
         user.setUsername(userRequest.getUsername());
         user.setEmail(userRequest.getEmail());
-        user.setPasswordHash(userRequest.getPasswordHash());
+        user.setPasswordHash(passwordEncoder.encode(userRequest.getPassword()));
         user.setFirstName(userRequest.getFirstName());
         user.setLastName(userRequest.getLastName());
         user.setRole(userRequest.getRole());
