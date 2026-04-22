@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 
@@ -32,12 +33,15 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     }
 
     public List<ProductVariant> getVariantsByProduct(int productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new NotFoundException("Product", productId);
+        }
         return productVariantRepository.findByProductId(productId);
     }
 
     public ProductVariant createVariant(ProductVariantRequest variantRequest) {
         Product product = productRepository.findById(variantRequest.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found: " + variantRequest.getProductId()));
+                .orElseThrow(() -> new NotFoundException("Product", variantRequest.getProductId()));
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
                 .sku(variantRequest.getSku())
@@ -50,7 +54,7 @@ public class ProductVariantServiceImpl implements ProductVariantService {
 
     public ProductVariant updateVariant(int variantId, ProductVariantRequest variantRequest) {
         ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
+                .orElseThrow(() -> new NotFoundException("ProductVariant", variantId));
         variant.setSku(variantRequest.getSku());
         variant.setAttributes(variantRequest.getAttributes());
         variant.setBasePrice(variantRequest.getBasePrice());

@@ -44,7 +44,8 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                  HttpServletRequest httpRequest) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new DuplicateException("Usuario", "username", request.username());
         }
@@ -64,6 +65,16 @@ public class AuthController {
                 .build();
 
         userRepository.save(user);
+
+        Session session = Session.builder()
+                .user(user)
+                .createdAt(new Date())
+                .expiresAt(jwtService.getExpirationDate())
+                .deviceInfo(httpRequest.getHeader("User-Agent"))
+                .ipAddress(httpRequest.getRemoteAddr())
+                .build();
+        sessionRepository.save(session);
+
         String token = jwtService.generateToken(user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token));
     }

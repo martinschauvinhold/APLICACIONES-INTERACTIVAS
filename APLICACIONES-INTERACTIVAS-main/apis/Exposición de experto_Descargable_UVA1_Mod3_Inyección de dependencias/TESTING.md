@@ -147,12 +147,27 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 20 | GET | `/variants` | Token (¿debería ser público?) | ❌ falta header | | |
-| 21 | GET | `/variants/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 22 | GET | `/variants/product/{productId}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 23 | POST | `/variants` | seller o admin | ❌ falta header | | |
-| 24 | PUT | `/variants/{id}` | seller o admin | ❌ falta header | | |
-| 25 | DELETE | `/variants/{id}` | seller o admin | ❌ falta header | | |
+| 20 | GET | `/variants` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista (vacía si no hay variantes) |
+| 20b | GET | `/variants` | Sin token | — | ✅ OK | 401 |
+| 21 | GET | `/variants/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 con variante |
+| 21b | GET | `/variants/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 21c | GET | `/variants/{id}` | Sin token | — | ✅ OK | 401 |
+| 22 | GET | `/variants/product/{productId}` | Token + productId existente | ❌ falta header | ✅ OK | 200 + lista de variantes del producto |
+| 22b | GET | `/variants/product/{productId}` | Token + productId inexistente | — | ✅ OK | 404 `Product con id X no encontrado` — corregido: ahora verifica existencia del producto antes de buscar variantes |
+| 22c | GET | `/variants/product/{productId}` | Sin token | — | ✅ OK | 401 |
+| 23 | POST | `/variants` | seller | ❌ falta header | ✅ OK | 201 + variante creada |
+| 23b | POST | `/variants` | admin | — | ✅ OK | 201 + variante creada |
+| 23c | POST | `/variants` | Sin token | — | ✅ OK | 401 |
+| 23d | POST | `/variants` | buyer | — | ✅ OK | 403 |
+| 23e | POST | `/variants` | seller + productId inexistente | — | ✅ OK | 404 `Product con id 9999 no encontrado` — **bug corregido**: era 500, cambiado `RuntimeException` → `NotFoundException` en service |
+| 24 | PUT | `/variants/{id}` | seller + ID existente | ❌ falta header | ✅ OK | 200 con datos actualizados |
+| 24b | PUT | `/variants/{id}` | seller + ID inexistente | — | ✅ OK | 404 |
+| 24c | PUT | `/variants/{id}` | Sin token | — | ✅ OK | 401 |
+| 24d | PUT | `/variants/{id}` | buyer | — | ✅ OK | 403 |
+| 25 | DELETE | `/variants/{id}` | seller + ID existente | ❌ falta header | ✅ OK | 204 sin body |
+| 25b | DELETE | `/variants/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 25c | DELETE | `/variants/{id}` | Sin token | — | ✅ OK | 401 |
+| 25d | DELETE | `/variants/{id}` | buyer | — | ✅ OK | 403 |
 
 ---
 
@@ -364,7 +379,7 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 3 | ¿El logout debe invalidar solo la sesión actual o todas las sesiones del usuario? | El código actual (`sessionRepository::deleteByUser`) borra todas las sesiones al hacer logout desde cualquier dispositivo. Si el usuario está logueado desde el celular y la PC, al cerrar sesión desde uno se cierra en ambos. | |
 | 4 | ¿Los límites de rate limiting son adecuados? | Actualmente: 10 req/min para `/auth/*`, 100 req/min para el resto (por IP). ¿Son valores razonables para el proyecto? | |
 | 5 | ¿Cómo se crea el primer admin en un ambiente nuevo? | No hay endpoint público para esto. Se definió que hay que hacer un INSERT directo en la DB con un hash BCrypt. ¿Se documenta el hash de una contraseña de ejemplo para simplificar el setup inicial? | |
-| 6 | **BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`. | El `JwtAuthFilter` valida `sessionRepository.existsByUserEmail(email)` además del JWT. El token del register no funciona en ningún endpoint autenticado — el usuario tiene que hacer login después. | |
+| 6 | ~~**BUG**: `/auth/register` devuelve un token pero no crea sesión en la tabla `sessions`.~~ | ✅ **RESUELTO** — `register` ahora crea una `Session` y la persiste igual que `login`. El token del register funciona directamente en endpoints autenticados sin necesidad de hacer login por separado. | |
 | 7 | ~~**COMPORTAMIENTO INCONSISTENTE**: `GET /users/{id}` y `GET /products/{id}` devuelven 204 para ID inexistente.~~ | ✅ **RESUELTO** — cambiado `noContent()` → `notFound()` en `UsersController.java` y `ProductsController.java`. | |
 | 8 | ~~**BUG**: `POST /products` sin `@Valid` ni validaciones → 500 con name null.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ProductsController`, `@NotBlank` en `name` y `@Positive` en `categoryId` en `ProductRequest`. | |
 | 9 | ~~**BUG**: `GET /categories/{id}` devuelve 204 para ID inexistente.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `CategoriesController`. | |
@@ -373,3 +388,6 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 12 | ~~**BUG**: `PUT /categories/{id}` no valida duplicados.~~ | ✅ **RESUELTO** — `updateCategory` ahora verifica con `findByDescription` antes de guardar. | |
 | 13 | ~~**BUG**: `DELETE /categories/{id}` con productos → 500.~~ | ✅ **RESUELTO** — `deleteCategory` verifica `productRepository.existsByCategory_Id` y lanza `BusinessRuleException` (422). Se agregó además `PATCH /categories/{id}/deactivate` para soft delete. | |
 | 14 | ~~**COMPORTAMIENTO**: Categorías nuevas con `active: false`.~~ | ✅ **RESUELTO** — `@Builder.Default` agregado en `Category.java`. Data preexistente corregida con `UPDATE categories SET is_active = 1`. | |
+| 15 | ~~**BUG**: `GET /variants/{id}` con ID inexistente devolvía 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `ProductVariantsController`. | |
+| 16 | ~~**BUG**: `POST /variants` con `productId` inexistente devolvía 500.~~ | ✅ **RESUELTO** — `RuntimeException` → `NotFoundException` en `ProductVariantServiceImpl.createVariant` y `updateVariant`. | |
+| 17 | ~~**COMPORTAMIENTO**: `GET /variants/product/{productId}` con productId inexistente devolvía 200 + lista vacía.~~ | ✅ **RESUELTO** — `getVariantsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. | |
