@@ -151,9 +151,10 @@ Cubre:
 
 ## Requisitos
 
-- Java 17+
+- Java 21+
 - Maven (o usar `./mvnw`)
 - Docker Desktop (Mac/Linux/Windows) **o** SQL Server Express local (Windows)
+- `jq` (solo para `make populate-db`). Mac: `brew install jq` · Windows: `choco install jq` · Linux: `apt install jq`
 
 ---
 
