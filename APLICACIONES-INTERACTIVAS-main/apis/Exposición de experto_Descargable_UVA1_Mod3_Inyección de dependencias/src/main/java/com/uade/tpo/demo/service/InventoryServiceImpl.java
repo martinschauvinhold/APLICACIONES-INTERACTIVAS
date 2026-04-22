@@ -38,6 +38,9 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     public List<Inventory> getInventoryByVariant(int variantId) {
+        if (!productVariantRepository.existsById(variantId)) {
+            throw new NotFoundException("ProductVariant", variantId);
+        }
         return inventoryRepository.findByVariantId(variantId);
     }
 
