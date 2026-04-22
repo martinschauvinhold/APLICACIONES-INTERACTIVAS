@@ -45,6 +45,12 @@ public class GlobalExceptionHandler {
                 400, "Bad Request", mensaje, LocalDateTime.now()));
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpected(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError(
+                500, "Internal Server Error", "Ocurrió un error inesperado", LocalDateTime.now()));
+    }
+
     private ResponseEntity<ApiError> build(HttpStatus status, EcommerceException ex) {
         return ResponseEntity.status(status).body(new ApiError(
                 status.value(), status.getReasonPhrase(), ex.getMessage(), LocalDateTime.now()));

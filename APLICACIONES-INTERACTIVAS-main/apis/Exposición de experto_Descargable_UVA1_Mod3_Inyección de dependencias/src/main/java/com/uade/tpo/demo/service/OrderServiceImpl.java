@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,8 @@ import com.uade.tpo.demo.repository.UserRepository;
 
 @Service
 public class OrderServiceImpl implements OrderService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
 
     @Autowired
     private OrderRepository orderRepository;
@@ -212,6 +216,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (status == OrderStatus.PAID) {
+            logger.warn("Cancelando orden {} en estado PAID — se restaurará stock y se marcarán pagos como REFUNDED", orderId);
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
                 List<Inventory> inventoryRows = inventoryRepository.findByVariantId(item.getVariant().getId());
@@ -267,6 +272,12 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(OrderStatus.CANCELLED);
             order.setUpdatedAt(new Date());
             orderRepository.save(order);
+        }
+
+        if (!expiredOrders.isEmpty()) {
+            logger.warn("Se cancelaron {} órdenes expiradas (PENDING hace más de 48hs). IDs: {}",
+                    expiredOrders.size(),
+                    expiredOrders.stream().map(o -> String.valueOf(o.getId())).toList());
         }
 
         return expiredOrders.size();
