@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.uade.tpo</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>e-commerce_grupo-12</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
 	<description>Mi primer proyecto en Spring</description>
