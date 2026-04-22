@@ -207,11 +207,26 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 32 | GET | `/warehouses` | seller o admin | ❌ falta header | | |
-| 33 | GET | `/warehouses/{id}` | seller o admin | ❌ falta header | | |
-| 34 | POST | `/warehouses` | admin | ❌ falta header | | |
-| 35 | PUT | `/warehouses/{id}` | admin | ❌ falta header | | |
-| 36 | DELETE | `/warehouses/{id}` | admin | ❌ falta header | | |
+| 32 | GET | `/warehouses` | seller o admin | ❌ falta header | ✅ OK | 200 + lista (seller y admin) |
+| 32b | GET | `/warehouses` | Sin token | — | ✅ OK | 401 |
+| 32c | GET | `/warehouses` | buyer | — | ✅ OK | 403 |
+| 33 | GET | `/warehouses/{id}` | seller o admin | ❌ falta header | ✅ OK | 200 con warehouse |
+| 33b | GET | `/warehouses/{id}` | seller + ID existente | — | ✅ OK | 200 |
+| 33c | GET | `/warehouses/{id}` | admin + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 33d | GET | `/warehouses/{id}` | Sin token | — | ✅ OK | 401 |
+| 33e | GET | `/warehouses/{id}` | buyer | — | ✅ OK | 403 |
+| 34 | POST | `/warehouses` | admin | ❌ falta header | ✅ OK | 201 + warehouse creado |
+| 34b | POST | `/warehouses` | seller | — | ✅ OK | 403 (solo admin puede crear) |
+| 34c | POST | `/warehouses` | Sin token | — | ✅ OK | 401 |
+| 34d | POST | `/warehouses` | buyer | — | ✅ OK | 403 |
+| 35 | PUT | `/warehouses/{id}` | admin | ❌ falta header | ✅ OK | 200 con datos actualizados |
+| 35b | PUT | `/warehouses/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 35c | PUT | `/warehouses/{id}` | seller | — | ✅ OK | 403 |
+| 35d | PUT | `/warehouses/{id}` | Sin token | — | ✅ OK | 401 |
+| 36 | DELETE | `/warehouses/{id}` | admin | ❌ falta header | ✅ OK | 204 sin body |
+| 36b | DELETE | `/warehouses/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 36c | DELETE | `/warehouses/{id}` | seller | — | ✅ OK | 403 |
+| 36d | DELETE | `/warehouses/{id}` | Sin token | — | ✅ OK | 401 |
 
 ---
 
@@ -219,12 +234,30 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 37 | GET | `/addresses` | admin | ❌ falta header | | |
-| 38 | GET | `/addresses/{id}` | admin | ❌ falta header | | |
-| 39 | GET | `/addresses/user/{userId}` | admin | ❌ falta header | | |
-| 40 | POST | `/addresses` | Token | ❌ falta header | | |
-| 41 | PUT | `/addresses/{id}` | Token | ❌ falta header | | |
-| 42 | DELETE | `/addresses/{id}` | Token | ❌ falta header | | |
+| 37 | GET | `/addresses` | admin | ❌ falta header | ✅ OK | 200 + lista (sin passwordHash ✅) |
+| 37b | GET | `/addresses` | Sin token | — | ✅ OK | 401 |
+| 37c | GET | `/addresses` | buyer | — | ✅ OK | 403 |
+| 37d | GET | `/addresses` | seller | — | ✅ OK | 403 |
+| 38 | GET | `/addresses/{id}` | admin | ❌ falta header | ✅ OK | 200 con dirección |
+| 38b | GET | `/addresses/{id}` | admin + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 38c | GET | `/addresses/{id}` | Sin token | — | ✅ OK | 401 |
+| 38d | GET | `/addresses/{id}` | buyer | — | ✅ OK | 403 |
+| 39 | GET | `/addresses/user/{userId}` | admin + userId existente | ❌ falta header | ✅ OK | 200 + lista de direcciones |
+| 39b | GET | `/addresses/user/{userId}` | admin + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del usuario |
+| 39c | GET | `/addresses/user/{userId}` | Sin token | — | ✅ OK | 401 |
+| 39d | GET | `/addresses/user/{userId}` | buyer | — | ✅ OK | 403 |
+| 40 | POST | `/addresses` | buyer | ❌ falta header | ✅ OK | 201 + dirección creada |
+| 40b | POST | `/addresses` | admin | — | ✅ OK | 201 + dirección creada |
+| 40c | POST | `/addresses` | Sin token | — | ✅ OK | 401 |
+| 40d | POST | `/addresses` | buyer + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` |
+| 40e | POST | `/addresses` | buyer + dirección duplicada | — | ✅ OK | 409 |
+| 40f | POST | `/addresses` | buyer + body `{}` | — | ✅ OK | 400 `userId: must be greater than 0, street: must not be blank, city: must not be blank, zipCode: must not be blank` — **bug corregido**: era 404 (buscaba userId=0), agregado `@Validated` + validaciones en DTO |
+| 41 | PUT | `/addresses/{id}` | buyer | ❌ falta header | ✅ OK | 200 con datos actualizados |
+| 41b | PUT | `/addresses/{id}` | buyer + ID inexistente | — | ✅ OK | 404 |
+| 41c | PUT | `/addresses/{id}` | Sin token | — | ✅ OK | 401 |
+| 42 | DELETE | `/addresses/{id}` | buyer | ❌ falta header | ✅ OK | 204 sin body |
+| 42b | DELETE | `/addresses/{id}` | buyer + ID inexistente | — | ✅ OK | 404 |
+| 42c | DELETE | `/addresses/{id}` | Sin token | — | ✅ OK | 401 |
 
 ---
 
@@ -429,3 +462,7 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 20 | ~~**BUG**: `GET /payments/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `PaymentsController.java`. |
 | 21 | ~~**COMPORTAMIENTO**: `GET /payments/order/{orderId}` con orderId inexistente devuelve 200 + `[]` en vez de 404.~~ | ✅ **RESUELTO** — `getPaymentsByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. |
 | 22 | ~~**ERROR EN SQL**: `admin_test` tenía email `admin_test@test.com` en el SQL pero `admin@mail.com` en la DB. Hash era correcto, el email estaba mal.~~ | ✅ **RESUELTO** — corregido el email en ambos `create_database(apis).sql`. Credenciales válidas: `admin@mail.com` / `Test1234!`. |
+| 23 | ~~**BUG**: `GET /warehouses/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `WarehousesController.java`. |
+| 24 | ~~**BUG**: `GET /addresses/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `AddressesController.java`. |
+| 25 | ~~**COMPORTAMIENTO**: `GET /addresses/user/{userId}` con userId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getAddressesByUser` ahora verifica `userRepository.existsById` y lanza `NotFoundException` (404) si el usuario no existe. |
+| 26 | ~~**BUG**: `POST /addresses` con body vacío devuelve 404 (buscaba userId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Validated` en controller y `@Positive` en `userId`, `@NotBlank` en `street`, `city`, `zipCode` en `AddressRequest`. |
