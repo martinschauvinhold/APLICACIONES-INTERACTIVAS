@@ -61,6 +61,7 @@ public class DiscountsController {
     }
 
     @GetMapping("/product/{productId}")
+    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<List<Discount>> getActiveDiscountsForProduct(@PathVariable int productId) {
         return ResponseEntity.ok(discountService.getActiveDiscountsForProduct(productId));
     }

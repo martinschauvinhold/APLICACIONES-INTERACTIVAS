@@ -4,9 +4,104 @@ API REST construida con Spring Boot 3 y SQL Server.
 
 ---
 
+## Primera vez — pasos para ejecutar localmente
+
+Guia paso a paso asumiendo que partis desde cero. Si ya tenes el proyecto corriendo, saltealo al "Inicio rapido (Make)".
+
+### 1. Clonar el repo
+
+```bash
+git clone https://github.com/martinschauvinhold/APLICACIONES-INTERACTIVAS.git
+cd APLICACIONES-INTERACTIVAS/APLICACIONES-INTERACTIVAS-main/apis/Exposición\ de\ experto_Descargable_UVA1_Mod3_Inyección\ de\ dependencias
+```
+
+### 2. Configurar variables de entorno
+
+Copia el archivo de ejemplo y genera una clave JWT:
+
+```bash
+cp .env.example .env
+```
+
+Genera un secret JWT (64 chars hex):
+
+```bash
+openssl rand -hex 32
+```
+
+Copia el output y reemplaza la linea `JWT_SECRET=...` dentro del `.env`.
+
+### 3. Levantar la base de datos
+
+Asegurate de tener Docker Desktop corriendo, despues:
+
+```bash
+docker compose up -d
+```
+
+Espera ~30 segundos a que SQL Server termine de inicializar (el healthcheck del `docker-compose.yml` tarda un poco).
+
+### 4. Crear la base de datos y el usuario (solo la primera vez)
+
+```bash
+docker exec -i ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong@Passw0rd' -No \
+  -Q "CREATE DATABASE [E-commerce];"
+
+docker exec -i ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong@Passw0rd' -No \
+  -Q "CREATE LOGIN appuser WITH PASSWORD='App12345!';"
+
+docker exec -i ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong@Passw0rd' -No -d "E-commerce" \
+  -Q "CREATE USER appuser FOR LOGIN appuser; ALTER ROLE db_owner ADD MEMBER appuser;"
+```
+
+> Nota: en Linux/Mac se usa `docker exec -i` (sin `-t`) para que no falle en ambientes sin TTY. En Windows PowerShell puede usarse `-it`.
+
+### 5. Levantar la app
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
+```
+
+Cuando veas `Tomcat started on port(s): 8080`, la app esta lista. Verificalo:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/products
+# Debe devolver 401 (auth requerida)
+```
+
+### 6. Crear los usuarios de prueba (seller y admin)
+
+Insertar los usuarios de prueba en la DB (password de ambos: `Test1234!`):
+
+```bash
+docker exec -i ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong@Passw0rd' -No -d "E-commerce" \
+  -Q "INSERT INTO USERS (username, email, password_hash, first_name, last_name, role, phone)
+      VALUES ('seller_test', 'seller_test@test.com', '\$2a\$10\$x8Tjy23gKQIHT.8WtSq3eOrv06s9H8zjneK3gah46jlWWy0gyOdJG', 'Seller', 'Test', 'seller', NULL);
+      INSERT INTO USERS (username, email, password_hash, first_name, last_name, role, phone)
+      VALUES ('admin_test', 'admin@mail.com', '\$2a\$10\$kFEOgt8Y9MUNY1Kfnzup/ekGXh.8dALD2ymXPSMb2Jo4WGYAI42si', 'Admin', 'Test', 'admin', NULL);"
+```
+
+### 7. Probar login
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@mail.com","password":"Test1234!"}'
+```
+
+Deberia devolver `{"token":"eyJ..."}`.
+
+Ahora podes importar `postman_collection.json` en Postman y arrancar a probar todos los endpoints.
+
+---
+
 ## Inicio rápido (Make)
 
-Si tenés `make` instalado, es la forma más simple de levantar todo:
+Si ya configuraste `.env` y creaste la DB la primera vez, con `make` es mas simple:
 
 ```bash
 # Primera vez (dos pasos, en terminales separadas):
@@ -58,7 +153,7 @@ Cubre:
 
 - Java 17+
 - Maven (o usar `./mvnw`)
-- SQL Server Express (local) **o** Docker
+- Docker Desktop (Mac/Linux/Windows) **o** SQL Server Express local (Windows)
 
 ---
 
