@@ -355,12 +355,31 @@ Por eso `GET /categories` devuelve 401 (falta token en Postman) y `GET /users` d
 
 | # | Método | Ruta | Auth requerida | Postman OK | Resultado | Notas |
 |---|--------|------|----------------|------------|-----------|-------|
-| 58 | GET | `/reviews` | Token (¿debería ser público?) | ❌ falta header | | |
-| 59 | GET | `/reviews/{id}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 60 | GET | `/reviews/product/{productId}` | Token (¿debería ser público?) | ❌ falta header | | |
-| 61 | POST | `/reviews` | buyer | ❌ falta header | | |
-| 62 | PUT | `/reviews/{id}` | buyer o admin | ❌ falta header | | |
-| 63 | DELETE | `/reviews/{id}` | admin | ❌ falta header | | |
+| 58 | GET | `/reviews` | Token (¿debería ser público?) | ❌ falta header | ✅ OK | 200 + lista |
+| 58b | GET | `/reviews` | Sin token | — | ✅ OK | 401 |
+| 59 | GET | `/reviews/{id}` | Token + ID existente | ❌ falta header | ✅ OK | 200 con reseña |
+| 59b | GET | `/reviews/{id}` | Token + ID inexistente | — | ✅ OK | 404 — **bug corregido**: era 204, cambiado `noContent()` → `notFound()` en controller |
+| 59c | GET | `/reviews/{id}` | Sin token | — | ✅ OK | 401 |
+| 60 | GET | `/reviews/product/{productId}` | Token + productId existente | ❌ falta header | ✅ OK | 200 + lista de reseñas |
+| 60b | GET | `/reviews/product/{productId}` | Token + productId inexistente | — | ✅ OK | 404 `Product con id 9999 no encontrado` — **bug corregido**: era 200 + `[]`, ahora verifica existencia del producto antes de buscar reseñas |
+| 60c | GET | `/reviews/product/{productId}` | Sin token | — | ✅ OK | 401 |
+| 61 | POST | `/reviews` | buyer + datos válidos | ❌ falta header | ✅ OK | 201 + reseña creada |
+| 61b | POST | `/reviews` | Sin token | — | ✅ OK | 401 |
+| 61c | POST | `/reviews` | seller | — | ✅ OK | 403 |
+| 61d | POST | `/reviews` | admin | — | ✅ OK | 403 (solo buyer puede crear reseñas) |
+| 61e | POST | `/reviews` | buyer + userId inexistente | — | ✅ OK | 404 `User con id 9999 no encontrado` |
+| 61f | POST | `/reviews` | buyer + productId inexistente | — | ✅ OK | 404 `Product con id 9999 no encontrado` |
+| 61g | POST | `/reviews` | buyer + body `{}` | — | ✅ OK | 400 — **bug corregido**: era 404 (buscaba userId=0), agregado `@Valid` + `@Positive` en `userId`/`productId`, `@Min(1) @Max(5)` en `rating` en `ReviewRequest` |
+| 62 | PUT | `/reviews/{id}` | buyer + ID existente | ❌ falta header | ✅ OK | 200 con datos actualizados |
+| 62b | PUT | `/reviews/{id}` | admin + ID existente | — | ✅ OK | 200 con datos actualizados |
+| 62c | PUT | `/reviews/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 62d | PUT | `/reviews/{id}` | Sin token | — | ✅ OK | 401 |
+| 62e | PUT | `/reviews/{id}` | seller | — | ✅ OK | 403 |
+| 63 | DELETE | `/reviews/{id}` | admin + ID existente | ❌ falta header | ✅ OK | 204 sin body |
+| 63b | DELETE | `/reviews/{id}` | admin + ID inexistente | — | ✅ OK | 404 |
+| 63c | DELETE | `/reviews/{id}` | Sin token | — | ✅ OK | 401 |
+| 63d | DELETE | `/reviews/{id}` | buyer | — | ✅ OK | 403 |
+| 63e | DELETE | `/reviews/{id}` | seller | — | ✅ OK | 403 |
 
 ---
 
@@ -511,3 +530,6 @@ Si se decide que son públicos, hay que agregar las rutas al `permitAll()` en `S
 | 29 | ~~**BUG**: `DELETE /orders/{id}` con orden que tiene items/pagos devuelve 500 (FK constraint).~~ | ✅ **RESUELTO** — `deleteOrder` ahora elimina en cascada: order items, payments, deliveries y returns antes de borrar la orden. Agregado `@Transactional`. |
 | 30 | ~~**BUG**: `GET /order-items/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `OrderItemsController.java`. |
 | 31 | ~~**COMPORTAMIENTO**: `GET /order-items/order/{orderId}` con orderId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getItemsByOrder` ahora verifica `orderRepository.existsById` y lanza `NotFoundException` (404) si la orden no existe. |
+| 32 | ~~**BUG**: `GET /reviews/{id}` con ID inexistente devuelve 204 en vez de 404.~~ | ✅ **RESUELTO** — `noContent()` → `notFound()` en `ReviewsController.java`. |
+| 33 | ~~**COMPORTAMIENTO**: `GET /reviews/product/{productId}` con productId inexistente devuelve 200 + `[]`.~~ | ✅ **RESUELTO** — `getReviewsByProduct` ahora verifica `productRepository.existsById` y lanza `NotFoundException` (404) si el producto no existe. |
+| 34 | ~~**BUG**: `POST /reviews` con body vacío devuelve 404 (buscaba userId=0) en vez de 400.~~ | ✅ **RESUELTO** — agregado `@Valid` en POST y PUT de `ReviewsController`, `@Positive` en `userId`/`productId`, `@Min(1) @Max(5)` en `rating` en `ReviewRequest`. |
