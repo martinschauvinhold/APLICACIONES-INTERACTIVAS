@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,11 +28,13 @@ public class DiscountsController {
     private DiscountService discountService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<List<Discount>> getDiscounts() {
         return ResponseEntity.ok(discountService.getDiscounts());
     }
 
     @GetMapping("/{discountId}")
+    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<Discount> getDiscountById(@PathVariable int discountId) {
         Optional<Discount> result = discountService.getDiscountById(discountId);
         if (result.isPresent()) {
@@ -41,12 +44,14 @@ public class DiscountsController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> createDiscount(@RequestBody DiscountRequest request) {
         Discount result = discountService.createDiscount(request);
         return ResponseEntity.created(URI.create("/discounts/" + result.getId())).body(result);
     }
 
     @PutMapping("/{discountId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateDiscount(@PathVariable int discountId,
             @RequestBody DiscountRequest request) {
         Discount updated = discountService.updateDiscount(discountId, request);
@@ -54,12 +59,14 @@ public class DiscountsController {
     }
 
     @DeleteMapping("/{discountId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteDiscount(@PathVariable int discountId) {
         discountService.deleteDiscount(discountId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/product/{productId}")
+    @PreAuthorize("hasAnyRole('buyer', 'seller', 'admin')")
     public ResponseEntity<List<Discount>> getActiveDiscountsForProduct(@PathVariable int productId) {
         return ResponseEntity.ok(discountService.getActiveDiscountsForProduct(productId));
     }
