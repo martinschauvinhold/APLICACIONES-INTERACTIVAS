@@ -1,6 +1,6 @@
 # E-Commerce API
 
-API REST construida con Spring Boot 3 y SQL Server.
+API REST construida con Spring Boot 3. Soporta **SQL Server** y **MySQL** de forma intercambiable (ver [Elegir motor de base de datos](#elegir-motor-de-base-de-datos)).
 
 ---
 
@@ -20,7 +20,14 @@ make wipe-db      # baja el contenedor y BORRA los datos
 make run-tests    # corre los tests (no necesita Docker)
 ```
 
-Corré `make` sin argumentos para ver todos los comandos disponibles.
+Todos los targets aceptan `DB=mysql` para usar MySQL en vez de SQL Server (default). Ejemplo:
+
+```bash
+make start-all DB=mysql
+make seed-db DB=mysql
+```
+
+Corré `make` sin argumentos para ver todos los comandos disponibles y qué motor está activo.
 
 > **Por qué dos pasos:** Hibernate crea las tablas al arrancar la app por primera vez (`ddl-auto=update`). El `seed-db` necesita que la tabla `USERS` exista, así que se corre después de que la app levantó por primera vez. En arranques posteriores no hace falta volver a seedear (los INSERTs son idempotentes vía `IF NOT EXISTS`).
 
@@ -58,7 +65,39 @@ Cubre:
 
 - Java 17+
 - Maven (o usar `./mvnw`)
-- SQL Server Express (local) **o** Docker
+- Uno de estos motores:
+  - SQL Server Express (local, Windows) **o**
+  - MySQL 8 (local) **o**
+  - Docker (levanta SQL Server o MySQL en contenedor — recomendado en Mac/Linux)
+
+---
+
+## Elegir motor de base de datos
+
+El proyecto trae ambos drivers (`mssql-jdbc` y `mysql-connector-j`) y cuatro perfiles de Spring. Elegís el motor con un perfil; los demás no se cargan.
+
+| Motor | Perfil Spring | Archivo de config | `make` |
+|-------|---------------|-------------------|--------|
+| SQL Server local (SQLEXPRESS) | _(default, sin perfil)_ | `application.properties` | _no aplica_ |
+| SQL Server en Docker | `docker` | `application-docker.properties` | `DB=mssql` (default) |
+| MySQL local | `mysql` | `application-mysql.properties` | _no aplica_ |
+| MySQL en Docker | `docker-mysql` | `application-docker-mysql.properties` | `DB=mysql` |
+
+**Cómo funciona la mezcla con Docker Compose:** `docker-compose.yml` define dos servicios (`sqlserver` y `mysql`), cada uno con su profile (`mssql` y `mysql`). `docker compose up -d` sin `--profile` no levanta nada; hay que elegir uno. Cada motor tiene su propio volumen, así que podés alternar sin perder datos del otro.
+
+```bash
+docker compose --profile mssql up -d    # solo SQL Server
+docker compose --profile mysql up -d    # solo MySQL
+```
+
+Con `make`, esto se maneja con la variable `DB`:
+
+```bash
+make start-all            # equivalente a DB=mssql
+make start-all DB=mysql   # MySQL
+```
+
+> **Sobre el campo JSON (`ProductVariant.attributes`):** usa `@JdbcTypeCode(SqlTypes.JSON)`, así que Hibernate 6 lo mapea solo — a `nvarchar(max)` en SQL Server y al tipo `JSON` nativo en MySQL 8. No hay que tocar nada.
 
 ---
 
@@ -80,17 +119,17 @@ Credenciales por defecto definidas en `application.properties`:
 
 ---
 
-### Opcion B — Docker (Mac/Linux/Windows con Docker Desktop)
+### Opcion B — SQL Server en Docker
 
-**1. Levantar el contenedor de SQL Server:**
+**1. Levantar el contenedor:**
 
 ```bash
-docker compose up -d
+docker compose --profile mssql up -d
 ```
 
 Espera ~30 segundos a que SQL Server termine de inicializar.
 
-**2. Crear la base de datos y el usuario** (solo la primera vez):
+**2. Crear la base y el usuario** (solo la primera vez):
 
 ```bash
 docker exec -it ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
@@ -102,47 +141,82 @@ docker exec -it ecommerce-sqlserver /opt/mssql-tools18/bin/sqlcmd \
       ALTER ROLE db_owner ADD MEMBER appuser;"
 ```
 
-**3. Correr la app con el perfil docker:**
+**3. Correr la app:**
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=docker
 ```
 
-O con variable de entorno:
+**Parar / borrar datos:**
 
 ```bash
-SPRING_PROFILES_ACTIVE=docker ./mvnw spring-boot:run
+docker compose --profile mssql down       # baja el contenedor
+docker compose --profile mssql down -v    # baja + borra volumen
 ```
 
-**Detener el contenedor:**
+---
+
+### Opcion C — MySQL en Docker
+
+**1. Levantar el contenedor:**
 
 ```bash
-docker compose down
+docker compose --profile mysql up -d
 ```
 
-**Borrar datos (volumen):**
+MySQL crea la base `ecommerce` y el usuario `appuser` automáticamente la primera vez (vía `MYSQL_DATABASE` / `MYSQL_USER` en `docker-compose.yml`). No hace falta el paso de inicialización.
+
+**2. Correr la app:**
 
 ```bash
-docker compose down -v
+./mvnw spring-boot:run -Dspring-boot.run.profiles=docker-mysql
+```
+
+**Parar / borrar datos:**
+
+```bash
+docker compose --profile mysql down
+docker compose --profile mysql down -v
+```
+
+---
+
+### Opcion D — MySQL local (instalacion directa)
+
+Si ya tenés MySQL instalado en tu host, creá la base y el usuario:
+
+```sql
+CREATE DATABASE ecommerce;
+CREATE USER 'appuser'@'localhost' IDENTIFIED BY 'App12345!';
+GRANT ALL PRIVILEGES ON ecommerce.* TO 'appuser'@'localhost';
+```
+
+Y corré la app con:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=mysql
 ```
 
 ---
 
 ## Variables de entorno
 
-Se pueden sobreescribir las credenciales sin tocar el codigo:
+Se pueden sobreescribir las credenciales sin tocar el código (aplica a cualquier perfil):
 
-| Variable | Descripcion | Default (docker) |
-|----------|-------------|-----------------|
-| `DB_URL`  | JDBC URL completa | `localhost:1433` TCP |
-| `DB_USER` | Usuario de la DB | `sa` |
-| `DB_PASS` | Password de la DB | `YourStrong@Passw0rd` |
+| Variable | Descripción | Default SQL Server | Default MySQL |
+|----------|-------------|--------------------|----------------|
+| `DB_URL`  | JDBC URL completa | `jdbc:sqlserver://localhost:1433;...` | `jdbc:mysql://localhost:3306/ecommerce?...` |
+| `DB_USER` | Usuario de la DB | `sa` / `appuser` | `appuser` |
+| `DB_PASS` | Password de la DB | `YourStrong@Passw0rd` / `App12345!` | `App12345!` |
+| `JWT_SECRET` | Clave HMAC para firmar JWTs | _obligatoria_ | _obligatoria_ |
 
-Copia `.env.example` como `.env` y ajusta los valores (el `.env` no se sube al repo).
+Copiá `.env.example` como `.env` y ajustá los valores (el `.env` no se sube al repo). El archivo incluye bloques comentados para cada motor.
 
 ---
 
 ## Conectarse desde un cliente SQL (IntelliJ / DBeaver / SSMS)
+
+**SQL Server (Docker):**
 
 | Campo | Valor |
 |-------|-------|
@@ -154,6 +228,19 @@ Copia `.env.example` como `.env` y ajusta los valores (el `.env` no se sube al r
 | Driver | SQL Server (mssql-jdbc) |
 
 En IntelliJ: `Database` > `+` > `Data Source` > `Microsoft SQL Server` > completar los campos anteriores.
+
+**MySQL (Docker):**
+
+| Campo | Valor |
+|-------|-------|
+| Host | `localhost` |
+| Puerto | `3306` |
+| Usuario | `appuser` (o `root`) |
+| Password | `App12345!` (root: `YourStrong@Passw0rd`) |
+| Base de datos | `ecommerce` |
+| Driver | MySQL (mysql-connector-j) |
+
+En IntelliJ: `Database` > `+` > `Data Source` > `MySQL` > completar los campos anteriores.
 
 ---
 

@@ -13,6 +13,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,7 +40,8 @@ public class ProductVariant {
     @Column(name = "sku", nullable = false, unique = true)
     private String sku;
 
-    @Column(name = "attributes", columnDefinition = "NVARCHAR(MAX)")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "attributes")
     private String attributes;
 
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
