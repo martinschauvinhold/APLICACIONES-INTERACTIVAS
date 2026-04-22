@@ -7,10 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.uade.tpo.demo.entity.Order;
+import com.uade.tpo.demo.entity.OrderStatus;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findByUserId(int userId);
 
-    List<Order> findByStatusAndCreatedAtBefore(String status, Date before);
+    List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, Date before);
 }

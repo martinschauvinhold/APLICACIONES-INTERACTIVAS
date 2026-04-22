@@ -23,6 +23,7 @@ import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
@@ -63,8 +64,8 @@ class OrderServiceTest {
     void getOrders_deberiaRetornarListaCompleta() {
         // Arrange
         var orders = List.of(
-                Order.builder().id(1).status("PENDING").build(),
-                Order.builder().id(2).status("PAID").build());
+                Order.builder().id(1).status(OrderStatus.PENDING).build(),
+                Order.builder().id(2).status(OrderStatus.PAID).build());
         when(orderRepository.findAll()).thenReturn(orders);
 
         // Act
@@ -77,7 +78,7 @@ class OrderServiceTest {
     @Test
     void getOrderById_deberiaRetornarOrden_cuandoIdExiste() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").totalAmount(BigDecimal.TEN).build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).totalAmount(BigDecimal.TEN).build();
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
 
         // Act
@@ -85,7 +86,7 @@ class OrderServiceTest {
 
         // Assert
         assertThat(result).isPresent();
-        assertThat(result.get().getStatus()).isEqualTo("PENDING");
+        assertThat(result.get().getStatus()).isEqualTo(OrderStatus.PENDING);
     }
 
     @Test
@@ -103,7 +104,7 @@ class OrderServiceTest {
     @Test
     void getOrdersByUser_deberiaRetornarOrdenesFiltradas() {
         // Arrange
-        var orders = List.of(Order.builder().id(1).status("PENDING").build());
+        var orders = List.of(Order.builder().id(1).status(OrderStatus.PENDING).build());
         when(orderRepository.findByUserId(5)).thenReturn(orders);
 
         // Act
@@ -122,7 +123,7 @@ class OrderServiceTest {
         var product = Product.builder().id(10).category(category).build();
         var variant = ProductVariant.builder().id(1).product(product).basePrice(new BigDecimal("100")).build();
         var inventory = Inventory.builder().id(1).variant(variant).stockQuantity(50).build();
-        var savedOrder = Order.builder().id(100).status("PENDING").totalAmount(new BigDecimal("200")).build();
+        var savedOrder = Order.builder().id(100).status(OrderStatus.PENDING).totalAmount(new BigDecimal("200")).build();
 
         var itemReq = new OrderItemRequest();
         itemReq.setVariantId(1);
@@ -147,7 +148,7 @@ class OrderServiceTest {
 
         // Assert
         assertThat(result.getId()).isEqualTo(100);
-        assertThat(result.getStatus()).isEqualTo("PENDING");
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.PENDING);
         verify(orderRepository).save(any());
         verify(orderItemRepository).saveAll(anyList());
     }
@@ -233,7 +234,7 @@ class OrderServiceTest {
     @Test
     void updateOrder_deberiaActualizarYRetornar_cuandoIdExiste() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -268,7 +269,7 @@ class OrderServiceTest {
     @Test
     void cancelOrder_deberiaCancelarOrden_cuandoEstaEnPending() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -276,13 +277,13 @@ class OrderServiceTest {
         var result = orderService.cancelOrder(1);
 
         // Assert
-        assertThat(result.getStatus()).isEqualTo("CANCELLED");
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 
     @Test
     void cancelOrder_deberiaCancelarYRevertirStock_cuandoEstaEnPaid() {
         // Arrange
-        var order = Order.builder().id(1).status("PAID").build();
+        var order = Order.builder().id(1).status(OrderStatus.PAID).build();
         var variant = ProductVariant.builder().id(1).build();
         var item = OrderItem.builder().id(1).variant(variant).quantity(2).build();
         var inventory = Inventory.builder().id(1).stockQuantity(0).build();
@@ -300,7 +301,7 @@ class OrderServiceTest {
         var result = orderService.cancelOrder(1);
 
         // Assert
-        assertThat(result.getStatus()).isEqualTo("CANCELLED");
+        assertThat(result.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         assertThat(inventory.getStockQuantity()).isEqualTo(2);
         assertThat(payment.getPaymentStatus()).isEqualTo("REFUNDED");
     }
@@ -308,13 +309,13 @@ class OrderServiceTest {
     @Test
     void cancelOrder_deberiaLanzarBusinessRuleException_cuandoEstadoInvalido() {
         // Arrange
-        var order = Order.builder().id(1).status("DELIVERED").build();
+        var order = Order.builder().id(1).status(OrderStatus.CANCELLED).build();
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
 
         // Act & Assert
         assertThatThrownBy(() -> orderService.cancelOrder(1))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("DELIVERED");
+                .hasMessageContaining("CANCELLED");
     }
 
     @Test
@@ -331,8 +332,8 @@ class OrderServiceTest {
     @Test
     void cancelExpiredOrders_deberiaCancelarOrdenesPendingAntiguas() {
         // Arrange
-        var order1 = Order.builder().id(1).status("PENDING").createdAt(new Date(0)).build();
-        var order2 = Order.builder().id(2).status("PENDING").createdAt(new Date(0)).build();
+        var order1 = Order.builder().id(1).status(OrderStatus.PENDING).createdAt(new Date(0)).build();
+        var order2 = Order.builder().id(2).status(OrderStatus.PENDING).createdAt(new Date(0)).build();
         when(orderRepository.findByStatusAndCreatedAtBefore(any(), any())).thenReturn(List.of(order1, order2));
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -341,7 +342,7 @@ class OrderServiceTest {
 
         // Assert
         assertThat(count).isEqualTo(2);
-        assertThat(order1.getStatus()).isEqualTo("CANCELLED");
-        assertThat(order2.getStatus()).isEqualTo("CANCELLED");
+        assertThat(order1.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order2.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }
 }

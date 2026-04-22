@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderItemRepository;
@@ -38,7 +39,7 @@ class OrderItemServiceTest {
     @Test
     void getItemsByOrder_deberiaRetornarItemsFiltrados() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
         var items = List.of(
                 OrderItem.builder().id(1).order(order).quantity(2).build(),
                 OrderItem.builder().id(2).order(order).quantity(1).build());
@@ -80,7 +81,7 @@ class OrderItemServiceTest {
     @Test
     void deleteItem_deberiaEliminarItem_cuandoOrdenEnPendingYNoEsUltimo() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
         var item1 = OrderItem.builder().id(1).order(order).subtotal(BigDecimal.TEN).build();
         var item2 = OrderItem.builder().id(2).order(order).subtotal(BigDecimal.TEN).build();
         when(orderItemRepository.findById(1)).thenReturn(Optional.of(item1));
@@ -109,7 +110,7 @@ class OrderItemServiceTest {
     @Test
     void deleteItem_deberiaLanzarBusinessRuleException_cuandoOrdenNoEstaPending() {
         // Arrange
-        var order = Order.builder().id(1).status("CONFIRMED").build();
+        var order = Order.builder().id(1).status(OrderStatus.PAID).build();
         var item = OrderItem.builder().id(1).order(order).build();
         when(orderItemRepository.findById(1)).thenReturn(Optional.of(item));
 
@@ -122,7 +123,7 @@ class OrderItemServiceTest {
     @Test
     void deleteItem_deberiaLanzarBusinessRuleException_cuandoEsElUltimoItem() {
         // Arrange
-        var order = Order.builder().id(1).status("PENDING").build();
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
         var item = OrderItem.builder().id(1).order(order).subtotal(BigDecimal.TEN).build();
         when(orderItemRepository.findById(1)).thenReturn(Optional.of(item));
         when(orderItemRepository.findByOrderId(1)).thenReturn(List.of(item));

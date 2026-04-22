@@ -1,5 +1,6 @@
 package com.uade.tpo.demo.entity.dto;
 
+import com.uade.tpo.demo.entity.PaymentResultStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class PaymentResult {
 
     private String transactionId;
-    private String status;    // COMPLETED o FAILED
+    private PaymentResultStatus status;
     private String message;
 }
