@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.Review;
@@ -38,9 +39,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     public List<Review> getReviewsByProduct(int productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new NotFoundException("Product", productId);
+        }
         return reviewRepository.findByProductId(productId);
     }
 
+    @Transactional
     public Review createReview(ReviewRequest reviewRequest) {
         User user = userRepository.findById(reviewRequest.getUserId())
                 .orElseThrow(() -> new NotFoundException("User", reviewRequest.getUserId()));
@@ -56,6 +61,7 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.save(review);
     }
 
+    @Transactional
     public Review updateReview(int reviewId, ReviewRequest reviewRequest) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new NotFoundException("Review", reviewId));
@@ -64,6 +70,7 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.save(review);
     }
 
+    @Transactional
     public void deleteReview(int reviewId) {
         reviewRepository.deleteById(reviewId);
     }

@@ -21,6 +21,8 @@ import com.uade.tpo.demo.entity.Review;
 import com.uade.tpo.demo.entity.dto.ReviewRequest;
 import com.uade.tpo.demo.service.ReviewService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("reviews")
 public class ReviewsController {
@@ -36,7 +38,7 @@ public class ReviewsController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<Review> getReviewById(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")
@@ -46,14 +48,14 @@ public class ReviewsController {
 
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
-    public ResponseEntity<Object> createReview(@RequestBody ReviewRequest reviewRequest) {
+    public ResponseEntity<Object> createReview(@Valid @RequestBody ReviewRequest reviewRequest) {
         Review result = reviewService.createReview(reviewRequest);
         return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(result);
     }
 
     @PutMapping("/{reviewId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @RequestBody ReviewRequest reviewRequest) {
+    public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @Valid @RequestBody ReviewRequest reviewRequest) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {
             Review updated = reviewService.updateReview(reviewId, reviewRequest);

@@ -87,6 +87,7 @@ class ReviewServiceTest {
         var reviews = List.of(
                 Review.builder().id(1).product(product).rating(5).build(),
                 Review.builder().id(2).product(product).rating(4).build());
+        when(productRepository.existsById(1)).thenReturn(true);
         when(reviewRepository.findByProductId(1)).thenReturn(reviews);
 
         // Act
@@ -94,6 +95,17 @@ class ReviewServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getReviewsByProduct_deberiaLanzarNotFoundException_cuandoProductoNoExiste() {
+        // Arrange
+        when(productRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> reviewService.getReviewsByProduct(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
