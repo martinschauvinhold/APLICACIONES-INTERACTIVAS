@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.dto.DeliveryRequest;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
+import com.uade.tpo.demo.repository.ShipmentTrackingRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
     private final OrderRepository orderRepository;
+    private final ShipmentTrackingRepository shipmentTrackingRepository;
 
     @Override
     public List<Delivery> getDeliveries() {
@@ -35,6 +37,8 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public List<Delivery> getDeliveriesByOrder(Integer orderId) {
+        if (!orderRepository.existsById(orderId))
+            throw new NotFoundException("Order", orderId);
         return deliveryRepository.findByOrderId(orderId);
     }
 
@@ -69,6 +73,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     public void deleteDelivery(Integer deliveryId) {
         if (!deliveryRepository.existsById(deliveryId))
             throw new NotFoundException("Delivery", deliveryId);
+        shipmentTrackingRepository.deleteAll(shipmentTrackingRepository.findByDeliveryId(deliveryId));
         deliveryRepository.deleteById(deliveryId);
     }
 }

@@ -41,6 +41,7 @@ import com.uade.tpo.demo.repository.PaymentRepository;
 import com.uade.tpo.demo.repository.PriceTierRepository;
 import com.uade.tpo.demo.repository.ProductReturnRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
+import com.uade.tpo.demo.repository.ShipmentTrackingRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @Service
@@ -86,6 +87,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ProductReturnRepository productReturnRepository;
+
+    @Autowired
+    private ShipmentTrackingRepository shipmentTrackingRepository;
 
     public ArrayList<Order> getOrders() {
         return new ArrayList<>(orderRepository.findAll());
@@ -216,7 +220,9 @@ public class OrderServiceImpl implements OrderService {
     public void deleteOrder(int orderId) {
         orderItemRepository.deleteAll(orderItemRepository.findByOrderId(orderId));
         paymentRepository.deleteAll(paymentRepository.findByOrderId(orderId));
-        deliveryRepository.deleteAll(deliveryRepository.findByOrderId(orderId));
+        var deliveries = deliveryRepository.findByOrderId(orderId);
+        deliveries.forEach(d -> shipmentTrackingRepository.deleteAll(shipmentTrackingRepository.findByDeliveryId(d.getId())));
+        deliveryRepository.deleteAll(deliveries);
         productReturnRepository.deleteAll(productReturnRepository.findByOrderId(orderId));
         orderRepository.deleteById(orderId);
     }

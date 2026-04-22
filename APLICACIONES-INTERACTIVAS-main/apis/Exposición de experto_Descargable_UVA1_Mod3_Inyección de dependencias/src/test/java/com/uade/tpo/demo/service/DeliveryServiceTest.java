@@ -22,6 +22,7 @@ import com.uade.tpo.demo.entity.dto.DeliveryRequest;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.DeliveryRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
+import com.uade.tpo.demo.repository.ShipmentTrackingRepository;
 
 @ExtendWith(MockitoExtension.class)
 class DeliveryServiceTest {
@@ -31,6 +32,9 @@ class DeliveryServiceTest {
 
     @Mock
     private OrderRepository orderRepository;
+
+    @Mock
+    private ShipmentTrackingRepository shipmentTrackingRepository;
 
     @InjectMocks
     private DeliveryServiceImpl deliveryService;
@@ -138,11 +142,13 @@ class DeliveryServiceTest {
     void deleteDelivery_deberiaEliminar_cuandoIdExiste() {
         // Arrange
         when(deliveryRepository.existsById(1)).thenReturn(true);
+        when(shipmentTrackingRepository.findByDeliveryId(1)).thenReturn(List.of());
 
         // Act
         deliveryService.deleteDelivery(1);
 
         // Assert
+        verify(shipmentTrackingRepository).findByDeliveryId(1);
         verify(deliveryRepository).deleteById(1);
     }
 
@@ -164,6 +170,7 @@ class DeliveryServiceTest {
         var deliveries = List.of(
                 Delivery.builder().id(1).order(order).shippingMethod("correo").build(),
                 Delivery.builder().id(2).order(order).shippingMethod("moto").build());
+        when(orderRepository.existsById(1)).thenReturn(true);
         when(deliveryRepository.findByOrderId(1)).thenReturn(deliveries);
 
         // Act
@@ -171,5 +178,17 @@ class DeliveryServiceTest {
 
         // Assert
         assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getDeliveriesByOrder_deberiaLanzarNotFoundException_cuandoOrderNoExiste() {
+        // Arrange
+        when(orderRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> deliveryService.getDeliveriesByOrder(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Order")
+                .hasMessageContaining("99");
     }
 }
