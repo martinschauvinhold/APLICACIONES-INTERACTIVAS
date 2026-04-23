@@ -104,7 +104,7 @@ class CategoryServiceTest {
         when(categoryRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        var result = categoryService.createCategory("Tablets");
+        var result = categoryService.createCategory("Tablets", null);
 
         // Assert
         assertThat(result.getDescription()).isEqualTo("Tablets");
@@ -118,7 +118,7 @@ class CategoryServiceTest {
         when(categoryRepository.findByDescription("Smartphones")).thenReturn(List.of(existing));
 
         // Act & Assert
-        assertThatThrownBy(() -> categoryService.createCategory("Smartphones"))
+        assertThatThrownBy(() -> categoryService.createCategory("Smartphones", null))
                 .isInstanceOf(DuplicateException.class)
                 .hasMessageContaining("Smartphones");
     }
