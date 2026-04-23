@@ -2,6 +2,7 @@ package com.uade.tpo.demo.service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,10 @@ public class ProductServiceImpl implements ProductService {
         product.setCategory(category);
         product.setUpdatedAt(new Date());
         return productRepository.save(product);
+    }
+
+    public List<Product> searchProducts(Integer categoryId, String brand, String name) {
+        return productRepository.search(categoryId, brand, name);
     }
 
     public void deleteProduct(int productId) {

@@ -24,10 +24,13 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.findById(categoryId);
     }
  
-    public Category createCategory(String description) throws CategoryDuplicateException {
+    public Category createCategory(String description, Integer parentId) throws CategoryDuplicateException {
         if (!categoryRepository.findByDescription(description).isEmpty())
             throw new CategoryDuplicateException();
-        return categoryRepository.save(Category.builder().description(description).build());
+        Category parent = null;
+        if (parentId != null)
+            parent = categoryRepository.findById(parentId).orElse(null);
+        return categoryRepository.save(Category.builder().description(description).parent(parent).build());
     }
  
     public Category updateCategory(int categoryId, String description) {

@@ -11,7 +11,7 @@ public interface CategoryService {
  
     public Optional<Category> getCategoryById(int categoryId);
  
-    public Category createCategory(String description) throws CategoryDuplicateException;
+    public Category createCategory(String description, Integer parentId) throws CategoryDuplicateException;
  
     public Category updateCategory(int categoryId, String description);
  
