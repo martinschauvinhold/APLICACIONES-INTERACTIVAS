@@ -4,6 +4,22 @@ API REST construida con Spring Boot 3 y SQL Server.
 
 ---
 
+## Inicio rápido (Make)
+
+Si tenés `make` instalado, es la forma más simple de levantar todo:
+
+```bash
+make start-all    # primera vez: levanta Docker, inicializa la DB y corre la app
+make start-app    # si Docker ya está corriendo
+make stop-db      # baja el contenedor
+make wipe-db      # baja el contenedor y BORRA los datos
+make run-tests    # corre los tests (no necesita Docker)
+```
+
+Corré `make` sin argumentos para ver todos los comandos disponibles.
+
+---
+
 ## Requisitos
 
 - Java 17+
@@ -119,6 +135,41 @@ El archivo `src/test/resources/application.properties` configura H2 automaticame
 
 ---
 
+## Roles y creación de usuarios
+
+Hay tres roles: `buyer`, `seller`, `admin`.
+
+| Rol | Quién lo crea |
+|-----|--------------|
+| `buyer` | Cualquiera via `POST /auth/register` (rol fijo, no elegible) |
+| `seller` | Un admin via `POST /users` con `"role": "seller"` |
+| `admin` | Un admin via `POST /users` con `"role": "admin"` |
+
+### Crear el primer admin
+
+`POST /users` requiere un admin autenticado, así que el primer admin hay que insertarlo directo en la DB. Generá un hash BCrypt del password (por ejemplo en [bcrypt-generator.com](https://bcrypt-generator.com) o con cualquier herramienta) y ejecutá:
+
+```sql
+INSERT INTO USERS (username, email, password_hash, first_name, last_name, role, created_at)
+VALUES ('admin', 'admin@mail.com', '$2a$10$...hash_bcrypt_aqui...', 'Admin', 'Sistema', 'admin', GETDATE());
+```
+
+Una vez que tenés el primer admin, podés crear más admins/sellers desde la API:
+
+```http
+POST /users
+Authorization: Bearer <token_admin>
+
+{
+  "username": "vendedor1",
+  "email": "vendedor1@mail.com",
+  "password": "password123",
+  "role": "seller"
+}
+```
+
+---
+
 ## Colección Postman
 
 Importar `postman_collection.json` (raíz del proyecto) en Postman para tener todos los endpoints listos con ejemplos de request body.
@@ -131,6 +182,17 @@ Importar `postman_collection.json` (raíz del proyecto) en Postman para tener to
 ## Endpoints disponibles
 
 La app corre en `http://localhost:8080`.
+
+### Autenticación
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| `POST` | `/auth/register` | Registrar nuevo usuario (rol: buyer) | No |
+| `POST` | `/auth/login` | Iniciar sesión, devuelve JWT | No |
+| `POST` | `/auth/logout` | Cerrar sesión (invalida la sesión en DB) | Bearer token |
+| `GET` | `/users/me` | Obtener perfil del usuario autenticado | Bearer token |
+
+El token JWT se incluye en el header `Authorization: Bearer <token>`. Expira en 24 horas (configurable con `JWT_SECRET` y `jwt.expiration-ms`).
 
 ### Módulos base
 

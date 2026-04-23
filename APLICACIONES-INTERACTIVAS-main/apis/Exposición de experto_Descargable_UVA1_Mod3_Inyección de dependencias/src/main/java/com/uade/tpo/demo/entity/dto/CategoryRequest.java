@@ -1,10 +1,11 @@
 package com.uade.tpo.demo.entity.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class CategoryRequest {
     private int id;
-    private String description;
+    @NotBlank private String description;
     private Integer parentId;
 }

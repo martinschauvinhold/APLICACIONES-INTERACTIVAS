@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.Review;
 import com.uade.tpo.demo.entity.dto.ReviewRequest;
 import com.uade.tpo.demo.service.ReviewService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("reviews")
@@ -35,9 +38,7 @@ public class ReviewsController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<Review> getReviewById(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")
@@ -46,13 +47,15 @@ public class ReviewsController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> createReview(@RequestBody ReviewRequest reviewRequest) {
+    @PreAuthorize("hasRole('buyer')")
+    public ResponseEntity<Object> createReview(@Valid @RequestBody ReviewRequest reviewRequest) {
         Review result = reviewService.createReview(reviewRequest);
         return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(result);
     }
 
     @PutMapping("/{reviewId}")
-    public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @RequestBody ReviewRequest reviewRequest) {
+    @PreAuthorize("hasAnyRole('buyer', 'admin')")
+    public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @Valid @RequestBody ReviewRequest reviewRequest) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {
             Review updated = reviewService.updateReview(reviewId, reviewRequest);
@@ -62,6 +65,7 @@ public class ReviewsController {
     }
 
     @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteReview(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {

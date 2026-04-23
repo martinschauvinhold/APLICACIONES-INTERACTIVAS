@@ -99,6 +99,14 @@ Crear `src/main/java/com/uade/tpo/demo/controllers/NombresController.java`:
 - El controller NO verifica existencia con `findById` — el service lanza `NotFoundException`
 - `POST` retorna `201 Created` con `Location` header usando `URI.create`
 - `DELETE` retorna `204 No Content`
+- **Recurso no encontrado → siempre `notFound()` (404), nunca `noContent()` (204)**:
+  ```java
+  // ❌ MAL — devuelve 204, el cliente lo interpreta como éxito sin body
+  return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+
+  // ✅ BIEN — devuelve 404
+  return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+  ```
 
 ### Paso 9 — Verificar
 
@@ -116,4 +124,5 @@ Correr `./mvnw test` y confirmar que todos los tests pasan antes de dar la tarea
 - [ ] ServiceImpl usa `@RequiredArgsConstructor` (no `@Autowired`)
 - [ ] Métodos de escritura tienen `@Transactional`
 - [ ] Controller usa `@Valid` en request body
+- [ ] Recurso no encontrado usa `notFound()` (404), nunca `noContent()` (204)
 - [ ] `./mvnw test` pasa sin errores

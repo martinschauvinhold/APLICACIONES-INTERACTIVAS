@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
-import com.uade.tpo.demo.entity.ProductVariant;
-import com.uade.tpo.demo.entity.dto.OrderItemRequest;
+import com.uade.tpo.demo.entity.OrderStatus;
+import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.OrderItemRepository;
 import com.uade.tpo.demo.repository.OrderRepository;
-import com.uade.tpo.demo.repository.ProductVariantRepository;
 
 @Service
 public class OrderItemServiceImpl implements OrderItemService {
@@ -25,10 +25,10 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private ProductVariantRepository productVariantRepository;
-
     public List<OrderItem> getItemsByOrder(int orderId) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new NotFoundException("Order", orderId);
+        }
         return orderItemRepository.findByOrderId(orderId);
     }
 
@@ -36,36 +36,23 @@ public class OrderItemServiceImpl implements OrderItemService {
         return orderItemRepository.findById(itemId);
     }
 
-    public OrderItem addItem(OrderItemRequest request) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Order not found: " + request.getOrderId()));
-
-        ProductVariant variant = productVariantRepository.findById(request.getVariantId())
-                .orElseThrow(() -> new RuntimeException("Variant not found: " + request.getVariantId()));
-
-        BigDecimal unitPrice = variant.getBasePrice();
-        BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
-
-        OrderItem item = OrderItem.builder()
-                .order(order)
-                .variant(variant)
-                .quantity(request.getQuantity())
-                .unitPriceAtTime(unitPrice)
-                .discountApplied(BigDecimal.ZERO)
-                .subtotal(subtotal)
-                .build();
-
-        OrderItem saved = orderItemRepository.save(item);
-
-        recalculateOrderTotal(order);
-
-        return saved;
-    }
-
     public void deleteItem(int itemId) {
         OrderItem item = orderItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("OrderItem not found: " + itemId));
+                .orElseThrow(() -> new NotFoundException("OrderItem", itemId));
         Order order = item.getOrder();
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new BusinessRuleException(
+                    "Solo se pueden borrar items de ordenes en estado PENDING. Estado actual: "
+                            + order.getStatus());
+        }
+
+        List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+        if (items.size() <= 1) {
+            throw new BusinessRuleException(
+                    "No se puede borrar el ultimo item de una orden. Cancelar la orden en su lugar.");
+        }
+
         orderItemRepository.deleteById(itemId);
         recalculateOrderTotal(order);
     }

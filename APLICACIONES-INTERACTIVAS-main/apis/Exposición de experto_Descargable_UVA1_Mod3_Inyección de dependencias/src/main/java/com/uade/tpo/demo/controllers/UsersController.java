@@ -4,8 +4,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Optional;
 
+import com.uade.tpo.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,27 +30,40 @@ public class UsersController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<ArrayList<User>> getUsers() {
         return ResponseEntity.ok(userService.getUsers());
     }
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<User> getUserById(@PathVariable int userId) {
         Optional<User> result = userService.getUserById(userId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getMe() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Object> createUser(@RequestBody UserRequest userRequest) {
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<Object> createUser(@Valid @RequestBody UserRequest userRequest) {
         User result = userService.createUser(userRequest);
         return ResponseEntity.created(URI.create("/users/" + result.getId())).body(result);
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<Object> updateUser(@PathVariable int userId, @RequestBody UserRequest userRequest) {
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<Object> updateUser(@PathVariable int userId, @Valid @RequestBody UserRequest userRequest) {
         Optional<User> result = userService.getUserById(userId);
         if (result.isPresent()) {
             User updated = userService.updateUser(userId, userRequest);
@@ -56,6 +73,7 @@ public class UsersController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deleteUser(@PathVariable int userId) {
         Optional<User> result = userService.getUserById(userId);
         if (result.isPresent()) {

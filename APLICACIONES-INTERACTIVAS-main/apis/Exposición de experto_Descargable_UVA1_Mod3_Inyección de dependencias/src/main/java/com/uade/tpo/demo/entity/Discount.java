@@ -37,7 +37,7 @@ public class Discount {
     @Column(name = "discount_type")
     private String discountType;
 
-    @Column(name = "value", precision = 10, scale = 2)
+    @Column(name = "discount_value", precision = 10, scale = 2)
     private BigDecimal value;
 
     @Column(name = "applies_to")

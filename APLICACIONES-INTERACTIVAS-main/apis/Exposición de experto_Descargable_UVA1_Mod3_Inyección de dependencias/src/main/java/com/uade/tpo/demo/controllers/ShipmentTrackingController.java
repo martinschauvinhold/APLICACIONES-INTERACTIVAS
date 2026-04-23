@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,12 +39,14 @@ public class ShipmentTrackingController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<ShipmentTracking> addCheckpoint(@Valid @RequestBody ShipmentTrackingRequest request) {
         ShipmentTracking created = trackingService.addCheckpoint(request);
         return ResponseEntity.created(URI.create("/tracking/" + created.getId())).body(created);
     }
 
     @PutMapping("/{trackingId}/status")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<ShipmentTracking> updateStatus(@PathVariable Integer trackingId,
                                                           @Valid @RequestBody TrackingStatusRequest request) {
         return ResponseEntity.ok(trackingService.updateStatus(trackingId, request.status()));

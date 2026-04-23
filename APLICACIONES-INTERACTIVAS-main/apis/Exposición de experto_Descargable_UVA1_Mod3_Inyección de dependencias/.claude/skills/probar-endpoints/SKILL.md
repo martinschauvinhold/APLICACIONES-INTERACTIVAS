@@ -1,0 +1,151 @@
+---
+name: probar-endpoints
+description: Prueba los endpoints del e-commerce contra el servidor local y actualiza TESTING.md con los resultados. Usar cuando el usuario pide "probar", "testear" o "revisar" una sección de endpoints (por ejemplo "probá auth", "testeá categorías", "revisá los endpoints de pedidos").
+---
+
+# /probar-endpoints
+
+Prueba una sección de endpoints del e-commerce de forma estructurada y registra los resultados en `TESTING.md`.
+
+## Antes de empezar
+
+1. Verificar que el servidor está corriendo en `http://localhost:8080`:
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/auth/login -X POST -H "Content-Type: application/json" -d '{"email":"x","password":"x"}'
+   ```
+   Si no devuelve un código HTTP, avisar al usuario que levante el servidor antes de continuar.
+
+2. Leer `TESTING.md` para ver qué sección se va a probar y qué endpoints tiene.
+
+3. Leer el controller correspondiente en `src/main/java/com/uade/tpo/demo/controllers/` para entender la auth requerida y la lógica esperada.
+
+---
+
+## Flujo de prueba
+
+### Paso 1 — Obtener tokens de prueba
+
+#### Buyer (registro automático)
+
+Registrar un usuario de prueba buyer (o hacer login si ya existe):
+
+```bash
+curl -s -X POST http://localhost:8080/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"tester_<seccion>","email":"tester_<seccion>@mail.com","password":"password123","firstName":"Test","lastName":"User"}'
+```
+
+Si devuelve 409 (ya existe), hacer login con las mismas credenciales en `/auth/login`.
+
+#### Admin y Seller (credenciales del SQL)
+
+**No pedirle al usuario las credenciales.** Buscarlas directamente en el archivo SQL del proyecto:
+
+```bash
+grep -A1 "USUARIOS DE PRUEBA\|INSERT INTO USERS" create_database\(apis\).sql | grep VALUES
+```
+
+El archivo tiene usuarios de prueba con la contraseña comentada (ej: `-- password: Test1234!`). Hacer login con esas credenciales:
+
+```bash
+curl -s -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"<email_del_sql>","password":"<password_del_comentario>"}'
+```
+
+**Credenciales vigentes** (password `Test1234!` para todos):
+| rol | email |
+|-----|-------|
+| seller | `seller_test@test.com` |
+| admin | `admin@mail.com` |
+
+Si el login falla (401), el email o el hash en la DB no coincide con el del SQL. Pedirle al usuario que revise qué usuarios existen en la tabla `USERS` y que actualice el SQL con las credenciales correctas antes de continuar.
+
+Si aun así falla (hash incorrecto en DB), en ese caso:
+- Documentar en TESTING.md que el test de ese rol quedó pendiente
+- Agregar en "Preguntas abiertas": hash del usuario `<rol>` no coincide con `<password>`, re-insertar con `INSERT INTO USERS ...` y el hash BCrypt correcto
+
+### Paso 2 — Ejecutar los casos de prueba
+
+Para cada endpoint de la sección, ejecutar **al menos** estos escenarios:
+
+#### Escenarios obligatorios
+
+| Tipo | Descripción |
+|------|-------------|
+| Happy path | Request válido con auth correcta → esperar 2xx |
+| Sin token | Request sin `Authorization` → esperar 401 |
+| Rol incorrecto | Request con token de rol equivocado → esperar 403 (si aplica) |
+| Body inválido | Request con campos vacíos o malformados → esperar 400 (si aplica) |
+| Recurso inexistente | Request con ID que no existe → esperar 404 (si aplica) |
+| Duplicado | Crear el mismo recurso dos veces → esperar 409 (si aplica) |
+
+#### Formato del curl
+
+```bash
+# Sin auth
+curl -s -w "\nSTATUS:%{http_code}" -X <MÉTODO> http://localhost:8080/<ruta> \
+  -H "Content-Type: application/json" \
+  -d '<body>'
+
+# Con auth
+curl -s -w "\nSTATUS:%{http_code}" -X <MÉTODO> http://localhost:8080/<ruta> \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -d '<body>'
+```
+
+### Paso 3 — Evaluar cada resultado
+
+Para cada request, comparar el status HTTP recibido con el esperado:
+
+- ✅ **OK** — el status y el body son los esperados
+- ❌ **Falla** — el status difiere del esperado (documentar qué se esperaba y qué llegó)
+- ⚠️ **Comportamiento inesperado** — el status es correcto pero el body tiene algo raro (campo faltante, mensaje confuso, campo que no debería estar, etc.)
+
+### Paso 4 — Actualizar TESTING.md
+
+Completar la columna **Resultado** de cada fila de la sección probada con ✅ / ❌ / ⚠️ y agregar notas donde haya algo para reportar.
+
+Si se encuentran bugs o comportamientos inesperados, agregarlos también en la sección **Preguntas abiertas** del archivo.
+
+---
+
+## Reglas
+
+- Nunca modificar datos productivos — usar siempre datos de prueba con prefijo `test_` o `tester_`
+- Si un endpoint de escritura (POST/PUT/DELETE) crea datos en la DB, intentar limpiarlo al final (DELETE si está disponible)
+- Si el servidor no está corriendo, no inventar resultados — pedirle al usuario que lo levante
+- No asumir que un endpoint funciona porque el test anterior funcionó — probar cada uno por separado
+- Reportar el resultado real, no el esperado — si algo falla, documentarlo tal cual
+
+---
+
+## Checklist de cierre
+
+Al terminar la sección:
+
+- [ ] Todos los endpoints de la sección tienen resultado en TESTING.md
+- [ ] Los bugs encontrados están en Preguntas abiertas
+- [ ] Se probaron tanto los happy paths como los casos de error
+- [ ] Se verificó que `passwordHash` no aparece en ninguna respuesta que devuelva un usuario
+- [ ] Cobertura de tests verificada (ver paso 5)
+
+---
+
+### Paso 5 — Verificar y completar cobertura de tests
+
+Después de documentar en TESTING.md, revisar si la lógica probada tiene cobertura de tests unitarios:
+
+1. Identificar qué `ServiceImpl` y repositories custom fueron ejercitados en esta sección.
+2. Revisar si existe un `*ServiceTest.java` y `*RepositoryTest.java` para cada uno.
+3. Si se encontraron bugs y se corrigieron, verificar que los casos corregidos estén cubiertos por un test.
+4. Si hay lógica nueva o sin tests, invocar `/nuevos-tests` indicando:
+   - Qué clase testear (`CategoryServiceImpl`, `ProductRepository`, etc.)
+   - Qué métodos o ramas son nuevas o están sin cubrir
+   - Si hay excepciones nuevas que deben verificarse
+
+**Ejemplo de invocación:**
+> `/nuevos-tests CategoryServiceImpl — agregar test para deactivateCategory y deleteCategory con productos`
+
+No inventar resultados de tests — ejecutar `./mvnw test -Dtest="NombreTest"` y reportar el resultado real.

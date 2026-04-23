@@ -11,6 +11,7 @@ import com.uade.tpo.demo.entity.Product;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
+    boolean existsByCategory_Id(int categoryId);
 
     @Query("SELECT p FROM Product p WHERE p.isActive = true " +
            "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +

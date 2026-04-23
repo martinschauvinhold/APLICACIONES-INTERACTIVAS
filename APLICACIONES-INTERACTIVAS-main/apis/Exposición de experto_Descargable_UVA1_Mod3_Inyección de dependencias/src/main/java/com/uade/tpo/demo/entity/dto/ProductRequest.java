@@ -1,11 +1,14 @@
 package com.uade.tpo.demo.entity.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
 public class ProductRequest {
-    private String name;
+    @NotBlank private String name;
     private String description;
     private String brand;
-    private int categoryId;
+    @Positive private int categoryId;
+    private Integer sellerId;
 }

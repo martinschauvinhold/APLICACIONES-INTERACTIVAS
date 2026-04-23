@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.Warehouse;
 import com.uade.tpo.demo.entity.dto.WarehouseRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.WarehouseRepository;
 
 @Service
@@ -34,7 +35,8 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     public Warehouse updateWarehouse(int warehouseId, WarehouseRequest warehouseRequest) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId).get();
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new NotFoundException("Warehouse", warehouseId));
         warehouse.setName(warehouseRequest.getName());
         warehouse.setLocation(warehouseRequest.getLocation());
         warehouse.setContactPhone(warehouseRequest.getContactPhone());

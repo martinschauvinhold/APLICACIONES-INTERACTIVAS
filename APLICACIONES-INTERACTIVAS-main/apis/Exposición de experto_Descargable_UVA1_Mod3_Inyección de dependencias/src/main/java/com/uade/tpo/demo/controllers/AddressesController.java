@@ -7,6 +7,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,25 +30,26 @@ public class AddressesController {
     private AddressService addressService;
 
     @GetMapping
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<ArrayList<Address>> getAddresses() {
         return ResponseEntity.ok(addressService.getAddresses());
     }
 
     @GetMapping("/{addressId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Address> getAddressById(@PathVariable int addressId) {
         Optional<Address> result = addressService.getAddressById(addressId);
-        if (result.isPresent())
-            return ResponseEntity.ok(result.get());
-        return ResponseEntity.noContent().build();
+        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('admin')")
     public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId) {
         return ResponseEntity.ok(addressService.getAddressesByUser(userId));
     }
 
     @PostMapping
-    public ResponseEntity<Object> createAddress(@RequestBody AddressRequest addressRequest) {
+    public ResponseEntity<Object> createAddress(@Validated @RequestBody AddressRequest addressRequest) {
         Address result = addressService.createAddress(addressRequest);
         return ResponseEntity.created(URI.create("/addresses/" + result.getId())).body(result);
     }
