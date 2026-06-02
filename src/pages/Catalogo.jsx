@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProductCard from '../components/ProductCard.jsx'
 import { products, categories } from '../data/products.js'
@@ -8,6 +8,14 @@ export default function Catalogo({ cart }) {
   const navigate = useNavigate()
   const [activeCat, setActiveCat] = useState('Todo')
   const [sort, setSort] = useState('relevantes')
+  // Referencia a la grilla de productos para hacer scroll desde "Ver catálogo".
+  const gridRef = useRef(null)
+
+  // Selecciona una categoría y baja hasta la grilla de productos.
+  function goToCategory(cat) {
+    setActiveCat(cat)
+    gridRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   // Filtra por categoría seleccionada.
   let visible = products.filter(
@@ -75,7 +83,7 @@ export default function Catalogo({ cart }) {
           <button
             className="btn btn-outline"
             style={{ alignSelf: 'flex-start' }}
-            onClick={() => setActiveCat('Todo')}
+            onClick={() => goToCategory('Todo')}
           >
             Ver catálogo →
           </button>
@@ -87,8 +95,8 @@ export default function Catalogo({ cart }) {
         {categories.map((c, i) => (
           <div
             key={c.key}
-            className={`cat-card ${i === 0 ? 'dark' : ''}`}
-            onClick={() => setActiveCat(c.key)}
+            className={`cat-card ${activeCat === c.key ? 'dark' : ''}`}
+            onClick={() => goToCategory(c.key)}
             style={{ cursor: 'pointer' }}
           >
             <span className="idx">0{i + 1}</span>
@@ -101,7 +109,7 @@ export default function Catalogo({ cart }) {
       </section>
 
       {/* Grilla de productos */}
-      <div className="section-head">
+      <div className="section-head" ref={gridRef} style={{ scrollMarginTop: 80 }}>
         <h2>
           Todos los productos
           <span className="count">{visible.length} productos</span>
