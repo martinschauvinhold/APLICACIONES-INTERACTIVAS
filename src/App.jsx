@@ -1,48 +1,66 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import Nav from './components/Nav';
+import Footer from './components/Footer';
+import CartDrawer from './components/CartDrawer';
+import QuickViewModal from './components/QuickViewModal';
+import Catalog from './pages/Catalog';
+import Product from './pages/Product';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Confirmation from './pages/Confirmation';
+import Orders from './pages/Orders';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Admin from './pages/Admin';
 
-import StoreLayout from './layouts/StoreLayout.jsx'
-import AuthLayout from './layouts/AuthLayout.jsx'
+/**
+ * RequireAdmin — guard de ruta: solo deja pasar a admin/seller.
+ * Si un comprador entra a /admin a mano, lo redirige al catálogo.
+ */
+function RequireAdmin({ children }) {
+  const role = useSelector((s) => s.session.user.role);
+  if (role !== 'admin' && role !== 'seller') return <Navigate to="/" replace />;
+  return children;
+}
 
-import Login from './pages/Login.jsx'
-import Registro from './pages/Registro.jsx'
-import Catalogo from './pages/Catalogo.jsx'
-import DetalleProducto from './pages/DetalleProducto.jsx'
-import Carrito from './pages/Carrito.jsx'
-import Checkout from './pages/Checkout.jsx'
-import Confirmacion from './pages/Confirmacion.jsx'
-import MisPedidos from './pages/MisPedidos.jsx'
-import Contacto from './pages/Contacto.jsx'
+/**
+ * App — define el ruteo de toda la aplicación con React Router DOM.
+ *
+ * Las pantallas de auth (login / register) son full-screen: no muestran
+ * Nav ni Footer. El resto comparte el layout (Nav + Footer + drawers).
+ */
+function App() {
+  const location = useLocation();
+  const isAuth = location.pathname === '/login' || location.pathname === '/register';
 
-import { useCart } from './hooks/useCart.js'
-
-// Componente raíz: define TODAS las rutas con React Router DOM.
-// El estado del carrito vive acá (useCart) y se baja por props a las vistas.
-export default function App() {
-  const cart = useCart()
+  if (isAuth) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    );
+  }
 
   return (
-    <BrowserRouter>
+    <>
+      <Nav />
       <Routes>
-        {/* --- Rutas de autenticación (layout partido, sin navbar de tienda) --- */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
-        </Route>
-
-        {/* --- Rutas de la tienda (comparten Navbar + Footer + ticker) --- */}
-        <Route element={<StoreLayout cart={cart} />}>
-          <Route path="/" element={<Catalogo cart={cart} />} />
-          <Route path="/productos" element={<Catalogo cart={cart} />} />
-          <Route path="/detalle/:id" element={<DetalleProducto cart={cart} />} />
-          <Route path="/carrito" element={<Carrito cart={cart} />} />
-          <Route path="/mis-pedidos" element={<MisPedidos />} />
-          <Route path="/contacto" element={<Contacto />} />
-        </Route>
-
-        {/* --- Rutas con cabecera propia --- */}
-        <Route path="/checkout" element={<Checkout cart={cart} />} />
-        <Route path="/confirmacion" element={<Confirmacion />} />
+        <Route path="/" element={<Catalog />} />
+        <Route path="/producto/:id" element={<Product />} />
+        <Route path="/carrito" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/confirmacion/:id" element={<Confirmation />} />
+        <Route path="/pedidos" element={<Orders />} />
+        <Route path="/admin" element={<RequireAdmin><Admin /></RequireAdmin>} />
+        <Route path="*" element={<Catalog />} />
       </Routes>
-    </BrowserRouter>
-  )
+      <Footer />
+      <CartDrawer />
+      <QuickViewModal />
+    </>
+  );
 }
+
+export default App;
