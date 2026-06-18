@@ -8,10 +8,14 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.uade.tpo.demo.entity.Inventory;
+import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
 import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.repository.InventoryRepository;
+import com.uade.tpo.demo.repository.PriceTierRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 
@@ -23,6 +27,12 @@ public class ProductVariantServiceImpl implements ProductVariantService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private PriceTierRepository priceTierRepository;
 
     public ArrayList<ProductVariant> getVariants() {
         return new ArrayList<>(productVariantRepository.findAll());
@@ -64,5 +74,21 @@ public class ProductVariantServiceImpl implements ProductVariantService {
 
     public void deleteVariant(int variantId) {
         productVariantRepository.deleteById(variantId);
+    }
+
+    public int getStockByVariant(int variantId) {
+        if (!productVariantRepository.existsById(variantId)) {
+            throw new NotFoundException("ProductVariant", variantId);
+        }
+        return inventoryRepository.findByVariantId(variantId).stream()
+                .mapToInt(Inventory::getStockQuantity)
+                .sum();
+    }
+
+    public List<PriceTier> getTiersByVariant(int variantId) {
+        if (!productVariantRepository.existsById(variantId)) {
+            throw new NotFoundException("ProductVariant", variantId);
+        }
+        return priceTierRepository.findByVariantId(variantId);
     }
 }

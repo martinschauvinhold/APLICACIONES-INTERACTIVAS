@@ -16,9 +16,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.uade.tpo.demo.entity.Inventory;
+import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.repository.InventoryRepository;
+import com.uade.tpo.demo.repository.PriceTierRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.ProductVariantRepository;
 
@@ -30,6 +34,12 @@ class ProductVariantServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private InventoryRepository inventoryRepository;
+
+    @Mock
+    private PriceTierRepository priceTierRepository;
 
     @InjectMocks
     private ProductVariantServiceImpl productVariantService;
@@ -174,5 +184,59 @@ class ProductVariantServiceTest {
 
         // Assert
         verify(productVariantRepository).deleteById(1);
+    }
+
+    @Test
+    void getStockByVariant_deberiaSumarStockDeTodosLosDepositos() {
+        // Arrange
+        when(productVariantRepository.existsById(1)).thenReturn(true);
+        var inventories = List.of(
+                Inventory.builder().id(1).stockQuantity(5).build(),
+                Inventory.builder().id(2).stockQuantity(3).build());
+        when(inventoryRepository.findByVariantId(1)).thenReturn(inventories);
+
+        // Act
+        var result = productVariantService.getStockByVariant(1);
+
+        // Assert
+        assertThat(result).isEqualTo(8);
+    }
+
+    @Test
+    void getStockByVariant_deberiaLanzarExcepcion_cuandoVarianteNoExiste() {
+        // Arrange
+        when(productVariantRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productVariantService.getStockByVariant(99))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
+    void getTiersByVariant_deberiaRetornarTiersDeLaVariante() {
+        // Arrange
+        when(productVariantRepository.existsById(1)).thenReturn(true);
+        var tiers = List.of(
+                PriceTier.builder().id(1).minQuantity(1).unitPrice(new BigDecimal("100")).currency("ARS").build(),
+                PriceTier.builder().id(2).minQuantity(10).unitPrice(new BigDecimal("90")).currency("ARS").build());
+        when(priceTierRepository.findByVariantId(1)).thenReturn(tiers);
+
+        // Act
+        var result = productVariantService.getTiersByVariant(1);
+
+        // Assert
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void getTiersByVariant_deberiaLanzarExcepcion_cuandoVarianteNoExiste() {
+        // Arrange
+        when(productVariantRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productVariantService.getTiersByVariant(99))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
     }
 }

@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.ProductVariant;
+import com.uade.tpo.demo.entity.dto.PriceTierResponse;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.entity.dto.VariantStockResponse;
 import com.uade.tpo.demo.service.ProductVariantService;
 
 @RestController
@@ -42,6 +44,22 @@ public class ProductVariantsController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<List<ProductVariant>> getVariantsByProduct(@PathVariable int productId) {
         return ResponseEntity.ok(productVariantService.getVariantsByProduct(productId));
+    }
+
+    // Stock agregado (suma de inventory en todos los depósitos) de lectura
+    // pública: el detalle por depósito sigue restringido a seller/admin en /inventory.
+    @GetMapping("/{variantId}/stock")
+    public ResponseEntity<VariantStockResponse> getVariantStock(@PathVariable int variantId) {
+        int stock = productVariantService.getStockByVariant(variantId);
+        return ResponseEntity.ok(new VariantStockResponse(variantId, stock));
+    }
+
+    @GetMapping("/{variantId}/tiers")
+    public ResponseEntity<List<PriceTierResponse>> getVariantTiers(@PathVariable int variantId) {
+        List<PriceTierResponse> tiers = productVariantService.getTiersByVariant(variantId).stream()
+                .map(t -> new PriceTierResponse(t.getMinQuantity(), t.getUnitPrice(), t.getCurrency()))
+                .toList();
+        return ResponseEntity.ok(tiers);
     }
 
     @PostMapping
