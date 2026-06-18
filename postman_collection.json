@@ -1051,7 +1051,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"SAM-S24-256-BLK\",\n  \"attributes\": \"256GB / Negro\",\n  \"basePrice\": 899.99\n}",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"SAM-S24-256-BLK\",\n  \"attributes\": \"{\\\"storage\\\":\\\"256GB\\\",\\\"color\\\":\\\"Negro\\\"}\",\n  \"basePrice\": 899.99\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1066,7 +1066,8 @@
               "path": [
                 "variants"
               ]
-            }
+            },
+            "description": "El campo `attributes` es una columna JSON en la DB — tiene que ser un string con JSON válido."
           }
         },
         {

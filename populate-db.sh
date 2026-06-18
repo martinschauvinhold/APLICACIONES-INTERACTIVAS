@@ -79,26 +79,53 @@ WH_SUR=$(post /warehouses     "$ADMIN_TOKEN" '{"name":"Depósito Sur","location"
 
 log "Creando productos, variantes e inventario..."
 
-# Helper: crea producto + 1 variante + stock en WH_CENTRAL
+# Helper: crea producto + 1 variante + stock en WH_CENTRAL, y opcionalmente
+# una segunda variante (otro color/capacidad) + su propio stock — así el
+# catálogo no muestra un solo SKU por producto.
+# $attrs debe ser un objeto JSON válido como string; la columna `attributes`
+# está mapeada como @JdbcTypeCode(SqlTypes.JSON) y MySQL rechaza strings no parseables.
 seed_item() {
   local name="$1" desc="$2" brand="$3" cat="$4" sku="$5" attrs="$6" price="$7" stock="$8"
-  local pid vid
-  pid=$(post /products "$SELLER_TOKEN" "{\"name\":\"$name\",\"description\":\"$desc\",\"brand\":\"$brand\",\"categoryId\":$cat}" | jq -r '.id')
-  vid=$(post /variants "$SELLER_TOKEN" "{\"productId\":$pid,\"sku\":\"$sku\",\"attributes\":\"$attrs\",\"basePrice\":$price}" | jq -r '.id')
+  local sku2="${9:-}" attrs2="${10:-}" price2="${11:-}" stock2="${12:-}"
+  local pid vid product_body variant_body
+  product_body=$(jq -n --arg n "$name" --arg d "$desc" --arg b "$brand" --argjson c "$cat" \
+    '{name:$n, description:$d, brand:$b, categoryId:$c}')
+  pid=$(post /products "$SELLER_TOKEN" "$product_body" | jq -r '.id')
+  variant_body=$(jq -n --argjson pid "$pid" --arg sku "$sku" --arg attrs "$attrs" --argjson price "$price" \
+    '{productId:$pid, sku:$sku, attributes:$attrs, basePrice:$price}')
+  vid=$(post /variants "$SELLER_TOKEN" "$variant_body" | jq -r '.id')
   post /inventory "$SELLER_TOKEN" "{\"variantId\":$vid,\"warehouseId\":$WH_CENTRAL,\"stockQuantity\":$stock}" > /dev/null
+
+  if [[ -n "$sku2" ]]; then
+    local variant2_body vid2
+    variant2_body=$(jq -n --argjson pid "$pid" --arg sku "$sku2" --arg attrs "$attrs2" --argjson price "$price2" \
+      '{productId:$pid, sku:$sku, attributes:$attrs, basePrice:$price}')
+    vid2=$(post /variants "$SELLER_TOKEN" "$variant2_body" | jq -r '.id')
+    post /inventory "$SELLER_TOKEN" "{\"variantId\":$vid2,\"warehouseId\":$WH_CENTRAL,\"stockQuantity\":$stock2}" > /dev/null
+  fi
   printf "%s" "$vid"
 }
 
-VAR_S24=$(seed_item "Samsung Galaxy S24"       "Smartphone Android flagship"       "Samsung" "$CAT_SMART" "SAM-S24-256-BLK"  "256GB / Negro"      899.99  30)
-VAR_IP15=$(seed_item "iPhone 15"               "Smartphone Apple"                  "Apple"   "$CAT_SMART" "APL-IP15-128-BLU" "128GB / Azul"       1199.00 20)
-VAR_PIX=$(seed_item "Google Pixel 8"           "Smartphone con cámara avanzada"    "Google"  "$CAT_SMART" "GOO-PIX8-256-OBS" "256GB / Obsidiana"  749.00  15)
-VAR_MAC=$(seed_item "MacBook Air M3"           "Notebook Apple con chip M3"        "Apple"   "$CAT_NOTE"  "APL-MBA-M3-512"   "13'' / 512GB"       1499.00 10)
-VAR_DELL=$(seed_item "Dell XPS 13"             "Ultrabook premium de Dell"         "Dell"    "$CAT_NOTE"  "DEL-XPS13-i7-16"  "i7 / 16GB / 512GB"  1299.99 12)
-VAR_AIR=$(seed_item "AirPods Pro 2"            "Auriculares inalámbricos con ANC"  "Apple"   "$CAT_AUDIO" "APL-APP2"         "USB-C"              249.00  50)
-VAR_SONY=$(seed_item "Sony WH-1000XM5"         "Auriculares over-ear con ANC"      "Sony"    "$CAT_AUDIO" "SON-WH1000XM5"    "Negro"              399.00  25)
-VAR_LG=$(seed_item "LG OLED C3 55\""           "Smart TV 4K OLED 55 pulgadas"      "LG"      "$CAT_TV"    "LG-OLED55C3"      "55'' / 4K"          1799.00  8)
-VAR_CAB=$(seed_item "Cable USB-C 2m"           "Cable USB-C a USB-C de 2 metros"   "Anker"   "$CAT_ACC"   "ANK-USBC-2M"      "2 metros"           19.99  200)
-VAR_FUND=$(seed_item "Funda silicona Galaxy S24" "Funda protectora de silicona"    "Spigen"  "$CAT_ACC"   "SPI-S24-CASE-BLK" "Negro"              24.99  100)
+VAR_S24=$(seed_item  "Samsung Galaxy S24"        "Smartphone Android flagship"       "Samsung" "$CAT_SMART" "SAM-S24-256-BLK"  '{"storage":"256GB","color":"Negro"}'       899.99  30 \
+  "SAM-S24-512-BLK"   '{"storage":"512GB","color":"Negro"}'        999.99  18)
+VAR_IP15=$(seed_item "iPhone 15"                 "Smartphone Apple"                  "Apple"   "$CAT_SMART" "APL-IP15-128-BLU" '{"storage":"128GB","color":"Azul"}'        1199.00 20 \
+  "APL-IP15-256-BLK"  '{"storage":"256GB","color":"Negro"}'        1349.00 14)
+VAR_PIX=$(seed_item  "Google Pixel 8"            "Smartphone con cámara avanzada"    "Google"  "$CAT_SMART" "GOO-PIX8-256-OBS" '{"storage":"256GB","color":"Obsidiana"}'   749.00  15 \
+  "GOO-PIX8-128-PRC"  '{"storage":"128GB","color":"Porcelana"}'    649.00  22)
+VAR_MAC=$(seed_item  "MacBook Air M3"            "Notebook Apple con chip M3"        "Apple"   "$CAT_NOTE"  "APL-MBA-M3-512"   '{"size":"13","storage":"512GB"}'           1499.00 10 \
+  "APL-MBA-M3-256"    '{"size":"13","storage":"256GB"}'            1299.00 16)
+VAR_DELL=$(seed_item "Dell XPS 13"               "Ultrabook premium de Dell"         "Dell"    "$CAT_NOTE"  "DEL-XPS13-i7-16"  '{"cpu":"i7","ram":"16GB","storage":"512GB"}' 1299.99 12 \
+  "DEL-XPS13-i5-08"   '{"cpu":"i5","ram":"8GB","storage":"256GB"}' 999.99  10)
+VAR_AIR=$(seed_item  "AirPods Pro 2"             "Auriculares inalámbricos con ANC"  "Apple"   "$CAT_AUDIO" "APL-APP2"         '{"connector":"USB-C"}'                     249.00  50 \
+  "APL-APP2-LTG"      '{"connector":"Lightning"}'                  229.00  35)
+VAR_SONY=$(seed_item "Sony WH-1000XM5"           "Auriculares over-ear con ANC"      "Sony"    "$CAT_AUDIO" "SON-WH1000XM5"    '{"color":"Negro"}'                         399.00  25 \
+  "SON-WH1000XM5-SLV" '{"color":"Plateado"}'                       399.00  17)
+VAR_LG=$(seed_item   "LG OLED C3 55\""           "Smart TV 4K OLED 55 pulgadas"      "LG"      "$CAT_TV"    "LG-OLED55C3"      '{"size":"55","resolution":"4K"}'           1799.00  8 \
+  "LG-OLED65C3"       '{"size":"65","resolution":"4K"}'            2499.00 5)
+VAR_CAB=$(seed_item  "Cable USB-C 2m"            "Cable USB-C a USB-C de 2 metros"   "Anker"   "$CAT_ACC"   "ANK-USBC-2M"      '{"length":"2m"}'                           19.99  200 \
+  "ANK-USBC-1M"       '{"length":"1m"}'                            12.99  150)
+VAR_FUND=$(seed_item "Funda silicona Galaxy S24" "Funda protectora de silicona"      "Spigen"  "$CAT_ACC"   "SPI-S24-CASE-BLK" '{"color":"Negro"}'                         24.99  100 \
+  "SPI-S24-CASE-BLU"  '{"color":"Azul"}'                           24.99   80)
 
 # ─── 4. Compradores (registro + login) ────────────────────────────────────────
 
@@ -163,6 +190,6 @@ post "/support/tickets/$TICKET_ID/messages" "$CARLA_TOKEN" "{\"senderId\":$CARLA
 # ─── Resumen ──────────────────────────────────────────────────────────────────
 
 ok "Listo. La base tiene ahora:"
-printf "    %b5%b categorías · %b2%b depósitos · %b10%b productos\n" "$BOLD" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET"
+printf "    %b5%b categorías · %b2%b depósitos · %b10%b productos · %b20%b variantes\n" "$BOLD" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET"
 printf "    %b3%b compradores (ana@mail.com, bruno@mail.com, carla@mail.com — pass %bPassword1!%b)\n" "$BOLD" "$RESET" "$YELLOW" "$RESET"
 printf "    %b2%b pedidos pagados · %b1%b pendiente · %b3%b reseñas · %b1%b cupón (%bBIENVENIDA10%b) · %b1%b ticket\n" "$BOLD" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET" "$YELLOW" "$RESET" "$BOLD" "$RESET"
