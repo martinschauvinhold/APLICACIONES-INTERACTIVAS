@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.OrderItemService;
+import com.uade.tpo.demo.service.OrderService;
 
 @RestController
 @RequestMapping("order-items")
@@ -22,9 +26,16 @@ public class OrderItemsController {
     @Autowired
     private OrderItemService orderItemService;
 
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private AuthorizationService authorizationService;
+
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<List<OrderItem>> getItemsByOrder(@PathVariable int orderId) {
+        authorizationService.requireSelfOrAdmin(orderOwnerId(orderId));
         return ResponseEntity.ok(orderItemService.getItemsByOrder(orderId));
     }
 
@@ -32,7 +43,11 @@ public class OrderItemsController {
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<OrderItem> getItemById(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        if (result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        authorizationService.requireSelfOrAdmin(result.get().getOrder().getUser().getId());
+        return ResponseEntity.ok(result.get());
     }
 
     @DeleteMapping("/{itemId}")
@@ -40,9 +55,16 @@ public class OrderItemsController {
     public ResponseEntity<Object> deleteItem(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
         if (result.isPresent()) {
+            authorizationService.requireSelfOrAdmin(result.get().getOrder().getUser().getId());
             orderItemService.deleteItem(itemId);
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    private int orderOwnerId(int orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        return order.getUser().getId();
     }
 }

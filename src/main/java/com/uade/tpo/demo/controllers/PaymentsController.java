@@ -16,8 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.Payment;
 import com.uade.tpo.demo.entity.dto.PaymentRequest;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
+import com.uade.tpo.demo.service.OrderService;
 import com.uade.tpo.demo.service.PaymentService;
 
 @RestController
@@ -26,6 +30,12 @@ public class PaymentsController {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
@@ -37,12 +47,17 @@ public class PaymentsController {
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<Payment> getPaymentById(@PathVariable int paymentId) {
         Optional<Payment> result = paymentService.getPaymentById(paymentId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        if (result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        authorizationService.requireSelfOrAdmin(result.get().getOrder().getUser().getId());
+        return ResponseEntity.ok(result.get());
     }
 
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<List<Payment>> getPaymentsByOrder(@PathVariable int orderId) {
+        authorizationService.requireSelfOrAdmin(orderOwnerId(orderId));
         return ResponseEntity.ok(paymentService.getPaymentsByOrder(orderId));
     }
 
@@ -50,7 +65,14 @@ public class PaymentsController {
     @PreAuthorize("hasRole('buyer')")
     public ResponseEntity<Payment> processPayment(@RequestBody PaymentRequest paymentRequest,
                                                    @RequestParam(defaultValue = "false") boolean simulateFailure) {
+        authorizationService.requireSelfOrAdmin(orderOwnerId(paymentRequest.getOrderId()));
         Payment result = paymentService.processPayment(paymentRequest, simulateFailure);
         return ResponseEntity.created(URI.create("/payments/" + result.getId())).body(result);
+    }
+
+    private int orderOwnerId(int orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        return order.getUser().getId();
     }
 }

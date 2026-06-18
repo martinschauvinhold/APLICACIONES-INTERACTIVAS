@@ -7,9 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Address;
-import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.AddressRequest;
-import com.uade.tpo.demo.repository.UserRepository;
 import com.uade.tpo.demo.service.AddressService;
+import com.uade.tpo.demo.service.AuthorizationService;
 
 @RestController
 @RequestMapping("addresses")
@@ -34,7 +31,7 @@ public class AddressesController {
     private AddressService addressService;
 
     @Autowired
-    private UserRepository userRepository;
+    private AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
@@ -51,16 +48,15 @@ public class AddressesController {
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId, Authentication auth) {
-        requireSelfOrAdmin(userId, auth);
+    public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId) {
+        authorizationService.requireSelfOrAdmin(userId);
         return ResponseEntity.ok(addressService.getAddressesByUser(userId));
     }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Object> createAddress(@Validated @RequestBody AddressRequest addressRequest,
-                                                Authentication auth) {
-        requireSelfOrAdmin(addressRequest.getUserId(), auth);
+    public ResponseEntity<Object> createAddress(@Validated @RequestBody AddressRequest addressRequest) {
+        authorizationService.requireSelfOrAdmin(addressRequest.getUserId());
         Address result = addressService.createAddress(addressRequest);
         return ResponseEntity.created(URI.create("/addresses/" + result.getId())).body(result);
     }
@@ -68,39 +64,25 @@ public class AddressesController {
     @PutMapping("/{addressId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Object> updateAddress(@PathVariable int addressId,
-                                                @RequestBody AddressRequest addressRequest,
-                                                Authentication auth) {
+                                                @RequestBody AddressRequest addressRequest) {
         Optional<Address> existing = addressService.getAddressById(addressId);
         if (existing.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        requireSelfOrAdmin(existing.get().getUser().getId(), auth);
+        authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         Address updated = addressService.updateAddress(addressId, addressRequest);
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{addressId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Object> deleteAddress(@PathVariable int addressId, Authentication auth) {
+    public ResponseEntity<Object> deleteAddress(@PathVariable int addressId) {
         Optional<Address> existing = addressService.getAddressById(addressId);
         if (existing.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        requireSelfOrAdmin(existing.get().getUser().getId(), auth);
+        authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         addressService.deleteAddress(addressId);
         return ResponseEntity.noContent().build();
-    }
-
-    private void requireSelfOrAdmin(int targetUserId, Authentication auth) {
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
-        if (isAdmin) {
-            return;
-        }
-        User current = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new AccessDeniedException("Usuario autenticado no encontrado"));
-        if (current.getId() != targetUserId) {
-            throw new AccessDeniedException("No tenés permiso para operar sobre direcciones de otro usuario");
-        }
     }
 }
