@@ -50,8 +50,9 @@ public class AddressesController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId, Authentication auth) {
+        requireSelfOrAdmin(userId, auth);
         return ResponseEntity.ok(addressService.getAddressesByUser(userId));
     }
 
