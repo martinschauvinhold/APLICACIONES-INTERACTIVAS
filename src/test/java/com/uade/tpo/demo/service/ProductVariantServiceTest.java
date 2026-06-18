@@ -20,6 +20,7 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
+import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
 import com.uade.tpo.demo.repository.InventoryRepository;
 import com.uade.tpo.demo.repository.PriceTierRepository;
@@ -236,6 +237,78 @@ class ProductVariantServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> productVariantService.getTiersByVariant(99))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
+    void getTierById_deberiaRetornarTier_cuandoExiste() {
+        // Arrange
+        var tier = PriceTier.builder().id(1).minQuantity(5).unitPrice(new BigDecimal("90")).build();
+        when(priceTierRepository.findById(1)).thenReturn(Optional.of(tier));
+
+        // Act
+        var result = productVariantService.getTierById(1);
+
+        // Assert
+        assertThat(result).isPresent();
+    }
+
+    @Test
+    void createTier_deberiaGuardarYRetornarTier_cuandoVarianteExiste() {
+        // Arrange
+        var variant = ProductVariant.builder().id(1).build();
+        var request = new PriceTierRequest();
+        request.setMinQuantity(10);
+        request.setUnitPrice(new BigDecimal("80"));
+        when(productVariantRepository.findById(1)).thenReturn(Optional.of(variant));
+        when(priceTierRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        var result = productVariantService.createTier(1, request);
+
+        // Assert
+        assertThat(result.getMinQuantity()).isEqualTo(10);
+        assertThat(result.getUnitPrice()).isEqualByComparingTo("80");
+        verify(priceTierRepository).save(any());
+    }
+
+    @Test
+    void createTier_deberiaLanzarExcepcion_cuandoVarianteNoExiste() {
+        // Arrange
+        when(productVariantRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> productVariantService.createTier(99, new PriceTierRequest()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
+    void updateTier_deberiaActualizarYRetornarTier_cuandoExiste() {
+        // Arrange
+        var tier = PriceTier.builder().id(1).minQuantity(5).unitPrice(new BigDecimal("90")).build();
+        var request = new PriceTierRequest();
+        request.setMinQuantity(20);
+        request.setUnitPrice(new BigDecimal("70"));
+        when(priceTierRepository.findById(1)).thenReturn(Optional.of(tier));
+        when(priceTierRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        var result = productVariantService.updateTier(1, request);
+
+        // Assert
+        assertThat(result.getMinQuantity()).isEqualTo(20);
+        assertThat(result.getUnitPrice()).isEqualByComparingTo("70");
+    }
+
+    @Test
+    void updateTier_deberiaLanzarExcepcion_cuandoNoExiste() {
+        // Arrange
+        when(priceTierRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> productVariantService.updateTier(99, new PriceTierRequest()))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("99");
     }

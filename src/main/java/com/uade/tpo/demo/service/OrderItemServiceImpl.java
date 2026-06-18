@@ -36,6 +36,10 @@ public class OrderItemServiceImpl implements OrderItemService {
         return orderItemRepository.findById(itemId);
     }
 
+    public List<OrderItem> getItemsBySeller(int sellerId) {
+        return orderItemRepository.findByVariant_Product_Seller_Id(sellerId);
+    }
+
     public void deleteItem(int itemId) {
         OrderItem item = orderItemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException("OrderItem", itemId));

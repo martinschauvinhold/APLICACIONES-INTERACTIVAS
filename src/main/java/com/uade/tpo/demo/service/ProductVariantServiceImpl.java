@@ -12,6 +12,7 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
+import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.InventoryRepository;
@@ -90,5 +91,28 @@ public class ProductVariantServiceImpl implements ProductVariantService {
             throw new NotFoundException("ProductVariant", variantId);
         }
         return priceTierRepository.findByVariantId(variantId);
+    }
+
+    public Optional<PriceTier> getTierById(int tierId) {
+        return priceTierRepository.findById(tierId);
+    }
+
+    public PriceTier createTier(int variantId, PriceTierRequest tierRequest) {
+        ProductVariant variant = productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new NotFoundException("ProductVariant", variantId));
+        PriceTier tier = PriceTier.builder()
+                .variant(variant)
+                .minQuantity(tierRequest.getMinQuantity())
+                .unitPrice(tierRequest.getUnitPrice())
+                .build();
+        return priceTierRepository.save(tier);
+    }
+
+    public PriceTier updateTier(int tierId, PriceTierRequest tierRequest) {
+        PriceTier tier = priceTierRepository.findById(tierId)
+                .orElseThrow(() -> new NotFoundException("PriceTier", tierId));
+        tier.setMinQuantity(tierRequest.getMinQuantity());
+        tier.setUnitPrice(tierRequest.getUnitPrice());
+        return priceTierRepository.save(tier);
     }
 }

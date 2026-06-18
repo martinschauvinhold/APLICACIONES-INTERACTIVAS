@@ -7,6 +7,7 @@ import java.util.Optional;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.ProductService;
 
 @RestController
@@ -27,6 +29,9 @@ public class ProductsController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping
     public ResponseEntity<ArrayList<Product>> getProducts() {
@@ -42,6 +47,11 @@ public class ProductsController {
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> createProduct(@Valid @RequestBody ProductRequest productRequest) {
+        // El seller solo puede crear productos a su propio nombre; el admin
+        // debe indicar explícitamente sellerId (a nombre de quién lo crea).
+        if (!authorizationService.isAdmin()) {
+            productRequest.setSellerId(authorizationService.currentUser().getId());
+        }
         Product result = productService.createProduct(productRequest);
         return ResponseEntity.created(URI.create("/products/" + result.getId())).body(result);
     }
@@ -52,6 +62,7 @@ public class ProductsController {
             @Valid @RequestBody ProductRequest productRequest) {
         Optional<Product> result = productService.getProductById(productId);
         if (result.isPresent()) {
+            requireOwnerOrAdmin(result.get());
             Product updated = productService.updateProduct(productId, productRequest);
             return ResponseEntity.ok(updated);
         }
@@ -67,5 +78,16 @@ public class ProductsController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    /** Productos creados antes de existir `seller` no tienen dueño: solo admin puede tocarlos. */
+    private void requireOwnerOrAdmin(Product product) {
+        if (product.getSeller() == null) {
+            if (!authorizationService.isAdmin()) {
+                throw new AccessDeniedException("Este producto no tiene vendedor asignado; solo un admin puede editarlo");
+            }
+            return;
+        }
+        authorizationService.requireSelfOrAdmin(product.getSeller().getId());
     }
 }

@@ -17,10 +17,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Product;
+import com.uade.tpo.demo.entity.Role;
+import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
+import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
+import com.uade.tpo.demo.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
@@ -30,6 +34,9 @@ class ProductServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -76,16 +83,19 @@ class ProductServiceTest {
     }
 
     @Test
-    void createProduct_deberiaGuardarYRetornarProducto_cuandoCategoriaExiste() {
+    void createProduct_deberiaGuardarYRetornarProducto_cuandoCategoriaYVendedorExisten() {
         // Arrange
         var category = Category.builder().id(1).description("Smartphones").build();
+        var seller = User.builder().id(10).role(Role.seller).build();
         var request = new ProductRequest();
         request.setName("Samsung Galaxy S24");
         request.setDescription("Smartphone Android");
         request.setBrand("Samsung");
         request.setCategoryId(1);
+        request.setSellerId(10);
 
         when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(userRepository.findById(10)).thenReturn(Optional.of(seller));
         when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
@@ -94,6 +104,7 @@ class ProductServiceTest {
         // Assert
         assertThat(result.getName()).isEqualTo("Samsung Galaxy S24");
         assertThat(result.getCategory()).isEqualTo(category);
+        assertThat(result.getSeller()).isEqualTo(seller);
         verify(productRepository).save(any());
     }
 
@@ -109,6 +120,85 @@ class ProductServiceTest {
         assertThatThrownBy(() -> productService.createProduct(request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("99");
+    }
+
+    @Test
+    void createProduct_deberiaLanzarNotFoundException_cuandoVendedorNoExiste() {
+        // Arrange
+        var category = Category.builder().id(1).description("Smartphones").build();
+        var request = new ProductRequest();
+        request.setName("Producto");
+        request.setCategoryId(1);
+        request.setSellerId(99);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(userRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
+    void createProduct_deberiaLanzarBusinessRuleException_cuandoUsuarioNoEsVendedor() {
+        // Arrange
+        var category = Category.builder().id(1).description("Smartphones").build();
+        var buyer = User.builder().id(5).role(Role.buyer).build();
+        var request = new ProductRequest();
+        request.setName("Producto");
+        request.setCategoryId(1);
+        request.setSellerId(5);
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(userRepository.findById(5)).thenReturn(Optional.of(buyer));
+
+        // Act & Assert
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void updateProduct_deberiaAsignarVendedor_cuandoProductoNoTeniaUno() {
+        // Arrange
+        var category = Category.builder().id(1).description("Smartphones").build();
+        var product = Product.builder().id(1).name("Producto viejo").build();
+        var seller = User.builder().id(3).role(Role.seller).build();
+        var request = new ProductRequest();
+        request.setName("Producto viejo");
+        request.setCategoryId(1);
+        request.setSellerId(3);
+
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(userRepository.findById(3)).thenReturn(Optional.of(seller));
+        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        var result = productService.updateProduct(1, request);
+
+        // Assert
+        assertThat(result.getSeller()).isEqualTo(seller);
+    }
+
+    @Test
+    void updateProduct_noDeberiaReasignarVendedor_cuandoProductoYaTieneUno() {
+        // Arrange
+        var category = Category.builder().id(1).description("Smartphones").build();
+        var sellerOriginal = User.builder().id(3).role(Role.seller).build();
+        var product = Product.builder().id(1).name("Producto").seller(sellerOriginal).build();
+        var request = new ProductRequest();
+        request.setName("Producto");
+        request.setCategoryId(1);
+        request.setSellerId(99); // intento de reasignar a otro vendedor
+
+        when(productRepository.findById(1)).thenReturn(Optional.of(product));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        var result = productService.updateProduct(1, request);
+
+        // Assert
+        assertThat(result.getSeller()).isEqualTo(sellerOriginal);
     }
 
     @Test

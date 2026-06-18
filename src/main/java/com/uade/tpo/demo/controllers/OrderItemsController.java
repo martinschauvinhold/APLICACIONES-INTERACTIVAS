@@ -39,6 +39,13 @@ public class OrderItemsController {
         return ResponseEntity.ok(orderItemService.getItemsByOrder(orderId));
     }
 
+    @GetMapping("/seller/{sellerId}")
+    @PreAuthorize("hasAnyRole('seller', 'admin')")
+    public ResponseEntity<List<OrderItem>> getItemsBySeller(@PathVariable int sellerId) {
+        authorizationService.requireSelfOrAdmin(sellerId);
+        return ResponseEntity.ok(orderItemService.getItemsBySeller(sellerId));
+    }
+
     @GetMapping("/{itemId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<OrderItem> getItemById(@PathVariable int itemId) {

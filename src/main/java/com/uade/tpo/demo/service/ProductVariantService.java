@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.ProductVariant;
+import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
 
 public interface ProductVariantService {
@@ -24,4 +25,10 @@ public interface ProductVariantService {
     int getStockByVariant(int variantId);
 
     List<PriceTier> getTiersByVariant(int variantId);
+
+    Optional<PriceTier> getTierById(int tierId);
+
+    PriceTier createTier(int variantId, PriceTierRequest tierRequest);
+
+    PriceTier updateTier(int tierId, PriceTierRequest tierRequest);
 }

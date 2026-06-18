@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.uade.tpo.demo.entity.OrderItem;
-import com.uade.tpo.demo.entity.dto.OrderItemRequest;
 
 public interface OrderItemService {
     List<OrderItem> getItemsByOrder(int orderId);
     Optional<OrderItem> getItemById(int itemId);
     void deleteItem(int itemId);
+    List<OrderItem> getItemsBySeller(int sellerId);
 }
