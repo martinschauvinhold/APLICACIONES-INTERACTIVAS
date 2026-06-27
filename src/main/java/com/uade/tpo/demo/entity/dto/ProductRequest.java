@@ -10,7 +10,7 @@ public class ProductRequest {
     private String description;
     private String brand;
     @Positive private int categoryId;
-    // Lo completa el controller con el id del seller autenticado; un admin
-    // puede mandarlo explícito para crear un producto a nombre de otro seller.
+    // Lo completa el controller con el id del vendedor autenticado; el valor que
+    // mande el cliente se ignora (un producto siempre pertenece a su vendedor).
     private int sellerId;
 }

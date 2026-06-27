@@ -1,7 +1,11 @@
 package com.uade.tpo.demo.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +30,26 @@ public class AuthorizationService {
                 .orElseThrow(() -> new AccessDeniedException("Usuario autenticado no encontrado"));
     }
 
+    /**
+     * Usuario de la sesión actual, o vacío si el request es anónimo. Pensado
+     * para endpoints públicos que cambian su comportamiento si hay sesión (p.
+     * ej. el listado de productos, donde un vendedor ve sus inactivos).
+     */
+    public Optional<User> currentUserOrEmpty() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmail(authentication.getName());
+    }
+
     public boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
     }
 
@@ -35,6 +57,16 @@ public class AuthorizationService {
         if (isAdmin()) {
             return;
         }
+        requireSelf(targetUserId);
+    }
+
+    /**
+     * Exige que el usuario de la sesión sea exactamente el dueño del recurso.
+     * A diferencia de {@link #requireSelfOrAdmin}, el admin NO está habilitado
+     * (se usa para recursos cuya autoridad es del dueño, p. ej. los productos
+     * de un vendedor).
+     */
+    public void requireSelf(int targetUserId) {
         if (currentUser().getId() != targetUserId) {
             throw new AccessDeniedException("No tenés permiso para operar sobre datos de otro usuario");
         }

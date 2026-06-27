@@ -1,10 +1,11 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.uade.tpo.demo.entity.Category;
@@ -12,6 +13,7 @@ import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
+import com.uade.tpo.demo.entity.dto.ProductResponse;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
@@ -30,8 +32,11 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private UserRepository userRepository;
 
-    public ArrayList<Product> getProducts() {
-        return new ArrayList<>(productRepository.findAll());
+    public Page<ProductResponse> getProducts(Integer categoryId, Integer sellerId, String search, Boolean active,
+            Integer viewerSellerId, Pageable pageable) {
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        return productRepository.search(categoryId, sellerId, active, normalizedSearch, viewerSellerId, pageable)
+                .map(ProductResponse::from);
     }
 
     public Optional<Product> getProductById(int productId) {
@@ -68,17 +73,7 @@ public class ProductServiceImpl implements ProductService {
         product.setBrand(productRequest.getBrand());
         product.setCategory(category);
         product.setUpdatedAt(new Date());
-        // Productos creados antes de existir `seller` no tienen dueño: permitir
-        // asignarlo una vez (no reasignar uno que ya tiene). No es un endpoint
-        // para "transferir" productos entre vendedores.
-        if (product.getSeller() == null && productRequest.getSellerId() > 0) {
-            User seller = userRepository.findById(productRequest.getSellerId())
-                    .orElseThrow(() -> new NotFoundException("User", productRequest.getSellerId()));
-            if (seller.getRole() != Role.seller) {
-                throw new BusinessRuleException("El usuario " + seller.getId() + " no es un vendedor");
-            }
-            product.setSeller(seller);
-        }
+        // El vendedor de un producto es fijo: update no lo cambia.
         return productRepository.save(product);
     }
 
