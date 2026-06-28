@@ -14,10 +14,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${app.uploads.dir}")
+    @Value("${app.uploads.dir:uploads/products}")
     private String uploadsDir;
 
-    @Value("${app.uploads.url-path}")
+    @Value("${app.uploads.url-path:/uploads/products}")
     private String urlPath;
 
     @Override

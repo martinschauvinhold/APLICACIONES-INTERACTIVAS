@@ -34,9 +34,9 @@ public class StorageService {
     private final String urlPath;
 
     public StorageService(
-            @Value("${app.uploads.dir}") String uploadsDir,
-            @Value("${app.uploads.base-url}") String baseUrl,
-            @Value("${app.uploads.url-path}") String urlPath) {
+            @Value("${app.uploads.dir:uploads/products}") String uploadsDir,
+            @Value("${app.uploads.base-url:http://localhost:8080}") String baseUrl,
+            @Value("${app.uploads.url-path:/uploads/products}") String urlPath) {
         this.root = Paths.get(uploadsDir).toAbsolutePath().normalize();
         this.baseUrl = stripTrailingSlash(baseUrl);
         this.urlPath = urlPath;

@@ -25,6 +25,7 @@ import com.uade.tpo.demo.entity.dto.ProductRequest;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
+import com.uade.tpo.demo.repository.ProductImageRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
@@ -40,6 +41,12 @@ class ProductServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProductImageRepository productImageRepository;
+
+    @Mock
+    private StorageService storageService;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
@@ -53,6 +60,8 @@ class ProductServiceTest {
         var pageable = PageRequest.of(0, 20);
         when(productRepository.search(null, null, Boolean.TRUE, null, null, pageable))
                 .thenReturn(new PageImpl<>(List.of(product), pageable, 1));
+        when(productImageRepository.findByProduct_IdInAndIsPrimaryTrue(any()))
+                .thenReturn(List.of());
 
         // Act
         var result = productService.getProducts(null, null, null, Boolean.TRUE, null, pageable);
