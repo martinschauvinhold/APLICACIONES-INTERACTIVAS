@@ -1,12 +1,17 @@
 package com.uade.tpo.demo.entity.dto;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.OrderStatus;
 
 public record OrderItemResponse(
         Integer id,
         Integer orderId,
+        OrderStatus orderStatus,
+        Date orderCreatedAt,
+        Integer productId,
         Integer variantId,
         String variantSku,
         String productName,
@@ -24,6 +29,9 @@ public record OrderItemResponse(
         return new OrderItemResponse(
                 orderItem.getId(),
                 order != null ? order.getId() : null,
+                order != null ? order.getStatus() : null,
+                order != null ? order.getCreatedAt() : null,
+                product != null ? product.getId() : null,
                 variant != null ? variant.getId() : null,
                 variant != null ? variant.getSku() : null,
                 product != null ? product.getName() : null,
