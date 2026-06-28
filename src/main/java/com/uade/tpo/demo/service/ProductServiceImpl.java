@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
 import com.uade.tpo.demo.entity.dto.ProductResponse;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.ConflictException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
 import com.uade.tpo.demo.repository.ProductImageRepository;
@@ -130,6 +132,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     public void deleteProduct(int productId) {
-        productRepository.deleteById(productId);
+        try {
+            productRepository.deleteById(productId);
+            productRepository.flush();
+        } catch (DataIntegrityViolationException ex) {
+            throw new ConflictException(
+                    "No se puede borrar un producto con imágenes, variantes o ventas asociadas.");
+        }
     }
 }
