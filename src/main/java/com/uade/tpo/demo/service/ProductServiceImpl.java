@@ -1,15 +1,20 @@
 package com.uade.tpo.demo.service;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Product;
+import com.uade.tpo.demo.entity.ProductImage;
 import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
@@ -17,6 +22,7 @@ import com.uade.tpo.demo.entity.dto.ProductResponse;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
+import com.uade.tpo.demo.repository.ProductImageRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
@@ -32,15 +38,61 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ProductImageRepository productImageRepository;
+
+    @Autowired
+    private StorageService storageService;
+
     public Page<ProductResponse> getProducts(Integer categoryId, Integer sellerId, String search, Boolean active,
             Integer viewerSellerId, Pageable pageable) {
         String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
-        return productRepository.search(categoryId, sellerId, active, normalizedSearch, viewerSellerId, pageable)
-                .map(ProductResponse::from);
+        Page<Product> page = productRepository.search(categoryId, sellerId, active, normalizedSearch, viewerSellerId,
+                pageable);
+
+        // Imágenes primarias en BATCH para no incurrir en N+1 al armar el listado.
+        List<Integer> productIds = page.getContent().stream().map(Product::getId).toList();
+        Map<Integer, String> primaryImageByProduct = productIds.isEmpty()
+                ? Map.of()
+                : productImageRepository.findByProduct_IdInAndIsPrimaryTrue(productIds).stream()
+                        .collect(Collectors.toMap(
+                                image -> image.getProduct().getId(),
+                                ProductImage::getUrl,
+                                (first, second) -> first));
+
+        return page.map(product -> ProductResponse.from(product, primaryImageByProduct.get(product.getId())));
     }
 
     public Optional<Product> getProductById(int productId) {
         return productRepository.findById(productId);
+    }
+
+    public ProductResponse toResponse(Product product) {
+        String imageUrl = productImageRepository.findFirstByProduct_IdAndIsPrimaryTrue(product.getId())
+                .map(ProductImage::getUrl)
+                .orElse(null);
+        return ProductResponse.from(product, imageUrl);
+    }
+
+    public ProductResponse uploadPrimaryImage(int productId, MultipartFile file) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product", productId));
+        String url = storageService.store(file);
+
+        // Mantener una sola imagen primaria: bajar las anteriores antes de agregar la nueva.
+        productImageRepository.findByProductId(productId).stream()
+                .filter(ProductImage::isPrimary)
+                .forEach(image -> {
+                    image.setPrimary(false);
+                    productImageRepository.save(image);
+                });
+
+        productImageRepository.save(ProductImage.builder()
+                .product(product)
+                .url(url)
+                .isPrimary(true)
+                .build());
+        return ProductResponse.from(product, url);
     }
 
     public Product createProduct(ProductRequest productRequest) {

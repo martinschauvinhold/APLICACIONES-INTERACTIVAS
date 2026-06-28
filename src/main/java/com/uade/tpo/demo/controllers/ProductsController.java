@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.Role;
@@ -56,9 +58,10 @@ public class ProductsController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<Product> getProductById(@PathVariable int productId) {
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable int productId) {
         Optional<Product> result = productService.getProductById(productId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(p -> ResponseEntity.ok(productService.toResponse(p)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -68,7 +71,8 @@ public class ProductsController {
         // vendedores, no el catálogo: no participa de las mutaciones de productos.
         productRequest.setSellerId(authorizationService.currentUser().getId());
         Product result = productService.createProduct(productRequest);
-        return ResponseEntity.created(URI.create("/products/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/products/" + result.getId()))
+                .body(productService.toResponse(result));
     }
 
     @PutMapping("/{productId}")
@@ -79,9 +83,25 @@ public class ProductsController {
         if (result.isPresent()) {
             requireOwner(result.get());
             Product updated = productService.updateProduct(productId, productRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(productService.toResponse(updated));
         }
         return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * Sube una imagen (multipart) y la fija como primaria del producto. Solo el
+     * vendedor dueño puede hacerlo. Devuelve el ProductResponse con imageUrl.
+     */
+    @PostMapping(path = "/{productId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('seller')")
+    public ResponseEntity<Object> uploadProductImage(@PathVariable int productId,
+            @RequestParam("file") MultipartFile file) {
+        Optional<Product> result = productService.getProductById(productId);
+        if (result.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        requireOwner(result.get());
+        return ResponseEntity.ok(productService.uploadPrimaryImage(productId, file));
     }
 
     @DeleteMapping("/{productId}")

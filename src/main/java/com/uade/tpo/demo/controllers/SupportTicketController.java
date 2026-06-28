@@ -18,7 +18,9 @@ import com.uade.tpo.demo.entity.Message;
 import com.uade.tpo.demo.entity.SupportTicket;
 import com.uade.tpo.demo.entity.TicketStatus;
 import com.uade.tpo.demo.entity.dto.MessageRequest;
+import com.uade.tpo.demo.entity.dto.MessageResponse;
 import com.uade.tpo.demo.entity.dto.SupportTicketRequest;
+import com.uade.tpo.demo.entity.dto.SupportTicketResponse;
 import com.uade.tpo.demo.entity.dto.TicketStatusRequest;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.MessageService;
@@ -40,44 +42,49 @@ public class SupportTicketController {
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<List<SupportTicket>> getAll() {
-        return ResponseEntity.ok(ticketService.getAll());
+    public ResponseEntity<List<SupportTicketResponse>> getAll() {
+        List<SupportTicketResponse> result = ticketService.getAll().stream()
+                .map(SupportTicketResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{ticketId}")
-    public ResponseEntity<SupportTicket> getById(@PathVariable Integer ticketId) {
+    public ResponseEntity<SupportTicketResponse> getById(@PathVariable Integer ticketId) {
         SupportTicket ticket = ticketService.getById(ticketId);
         authorizationService.requireSelfOrAdmin(ticket.getUser().getId());
-        return ResponseEntity.ok(ticket);
+        return ResponseEntity.ok(SupportTicketResponse.from(ticket));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('buyer', 'seller')")
-    public ResponseEntity<SupportTicket> create(@Valid @RequestBody SupportTicketRequest request) {
+    public ResponseEntity<SupportTicketResponse> create(@Valid @RequestBody SupportTicketRequest request) {
         // El usuario y el estado inicial los decide el back, no el cliente:
         // el ticket siempre se crea a nombre de quien lo manda, en estado OPEN.
         SupportTicketRequest safeRequest = new SupportTicketRequest(
                 authorizationService.currentUser().getId(), request.subject(), TicketStatus.OPEN);
         SupportTicket created = ticketService.create(safeRequest);
-        return ResponseEntity.created(URI.create("/support/tickets/" + created.getId())).body(created);
+        return ResponseEntity.created(URI.create("/support/tickets/" + created.getId()))
+                .body(SupportTicketResponse.from(created));
     }
 
     @PutMapping("/{ticketId}/status")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<SupportTicket> updateStatus(@PathVariable Integer ticketId,
+    public ResponseEntity<SupportTicketResponse> updateStatus(@PathVariable Integer ticketId,
                                                        @Valid @RequestBody TicketStatusRequest request) {
-        return ResponseEntity.ok(ticketService.updateStatus(ticketId, request.status()));
+        return ResponseEntity.ok(SupportTicketResponse.from(ticketService.updateStatus(ticketId, request.status())));
     }
 
     @GetMapping("/{ticketId}/messages")
-    public ResponseEntity<List<Message>> getMessages(@PathVariable Integer ticketId) {
+    public ResponseEntity<List<MessageResponse>> getMessages(@PathVariable Integer ticketId) {
         SupportTicket ticket = ticketService.getById(ticketId);
         authorizationService.requireSelfOrAdmin(ticket.getUser().getId());
-        return ResponseEntity.ok(messageService.getByTicketId(ticketId));
+        List<MessageResponse> result = messageService.getByTicketId(ticketId).stream()
+                .map(MessageResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/{ticketId}/messages")
-    public ResponseEntity<Message> sendMessage(@PathVariable Integer ticketId,
+    public ResponseEntity<MessageResponse> sendMessage(@PathVariable Integer ticketId,
                                                 @Valid @RequestBody MessageRequest request) {
         SupportTicket ticket = ticketService.getById(ticketId);
         authorizationService.requireSelfOrAdmin(ticket.getUser().getId());
@@ -85,6 +92,6 @@ public class SupportTicketController {
         MessageRequest safeRequest = new MessageRequest(authorizationService.currentUser().getId(), request.content());
         Message sent = messageService.send(ticketId, safeRequest);
         return ResponseEntity.created(URI.create("/support/tickets/" + ticketId + "/messages/" + sent.getId()))
-                .body(sent);
+                .body(MessageResponse.from(sent));
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.ShipmentTracking;
 import com.uade.tpo.demo.entity.dto.ShipmentTrackingRequest;
+import com.uade.tpo.demo.entity.dto.ShipmentTrackingResponse;
 import com.uade.tpo.demo.entity.dto.TrackingStatusRequest;
 import com.uade.tpo.demo.service.ShipmentTrackingService;
 
@@ -29,26 +30,28 @@ public class ShipmentTrackingController {
     private final ShipmentTrackingService trackingService;
 
     @GetMapping("/delivery/{deliveryId}")
-    public ResponseEntity<List<ShipmentTracking>> getByDelivery(@PathVariable Integer deliveryId) {
-        return ResponseEntity.ok(trackingService.getByDeliveryId(deliveryId));
+    public ResponseEntity<List<ShipmentTrackingResponse>> getByDelivery(@PathVariable Integer deliveryId) {
+        List<ShipmentTrackingResponse> result = trackingService.getByDeliveryId(deliveryId).stream()
+                .map(ShipmentTrackingResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{trackingId}")
-    public ResponseEntity<ShipmentTracking> getById(@PathVariable Integer trackingId) {
-        return ResponseEntity.ok(trackingService.getById(trackingId));
+    public ResponseEntity<ShipmentTrackingResponse> getById(@PathVariable Integer trackingId) {
+        return ResponseEntity.ok(ShipmentTrackingResponse.from(trackingService.getById(trackingId)));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<ShipmentTracking> addCheckpoint(@Valid @RequestBody ShipmentTrackingRequest request) {
+    public ResponseEntity<ShipmentTrackingResponse> addCheckpoint(@Valid @RequestBody ShipmentTrackingRequest request) {
         ShipmentTracking created = trackingService.addCheckpoint(request);
-        return ResponseEntity.created(URI.create("/tracking/" + created.getId())).body(created);
+        return ResponseEntity.created(URI.create("/tracking/" + created.getId())).body(ShipmentTrackingResponse.from(created));
     }
 
     @PutMapping("/{trackingId}/status")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<ShipmentTracking> updateStatus(@PathVariable Integer trackingId,
+    public ResponseEntity<ShipmentTrackingResponse> updateStatus(@PathVariable Integer trackingId,
                                                           @Valid @RequestBody TrackingStatusRequest request) {
-        return ResponseEntity.ok(trackingService.updateStatus(trackingId, request.status()));
+        return ResponseEntity.ok(ShipmentTrackingResponse.from(trackingService.updateStatus(trackingId, request.status())));
     }
 }

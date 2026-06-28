@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
+import com.uade.tpo.demo.entity.dto.OrderItemResponse;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.OrderItemService;
@@ -34,27 +35,31 @@ public class OrderItemsController {
 
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<List<OrderItem>> getItemsByOrder(@PathVariable int orderId) {
+    public ResponseEntity<List<OrderItemResponse>> getItemsByOrder(@PathVariable int orderId) {
         authorizationService.requireSelfOrAdmin(orderOwnerId(orderId));
-        return ResponseEntity.ok(orderItemService.getItemsByOrder(orderId));
+        List<OrderItemResponse> result = orderItemService.getItemsByOrder(orderId).stream()
+                .map(OrderItemResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/seller/{sellerId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<List<OrderItem>> getItemsBySeller(@PathVariable int sellerId) {
+    public ResponseEntity<List<OrderItemResponse>> getItemsBySeller(@PathVariable int sellerId) {
         authorizationService.requireSelfOrAdmin(sellerId);
-        return ResponseEntity.ok(orderItemService.getItemsBySeller(sellerId));
+        List<OrderItemResponse> result = orderItemService.getItemsBySeller(sellerId).stream()
+                .map(OrderItemResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{itemId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<OrderItem> getItemById(@PathVariable int itemId) {
+    public ResponseEntity<OrderItemResponse> getItemById(@PathVariable int itemId) {
         Optional<OrderItem> result = orderItemService.getItemById(itemId);
         if (result.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         authorizationService.requireSelfOrAdmin(result.get().getOrder().getUser().getId());
-        return ResponseEntity.ok(result.get());
+        return ResponseEntity.ok(OrderItemResponse.from(result.get()));
     }
 
     @DeleteMapping("/{itemId}")

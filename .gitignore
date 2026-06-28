@@ -36,3 +36,6 @@ build/
 
 ### Environment variables ###
 .env
+
+# Imágenes de productos subidas en runtime
+uploads/

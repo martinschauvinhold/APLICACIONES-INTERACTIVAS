@@ -1,7 +1,7 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Warehouse;
 import com.uade.tpo.demo.entity.dto.WarehouseRequest;
+import com.uade.tpo.demo.entity.dto.WarehouseResponse;
 import com.uade.tpo.demo.service.WarehouseService;
 
 @RestController
@@ -29,22 +30,27 @@ public class WarehousesController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<ArrayList<Warehouse>> getWarehouses() {
-        return ResponseEntity.ok(warehouseService.getWarehouses());
+    public ResponseEntity<List<WarehouseResponse>> getWarehouses() {
+        List<WarehouseResponse> result = warehouseService.getWarehouses().stream()
+                .map(WarehouseResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{warehouseId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Warehouse> getWarehouseById(@PathVariable int warehouseId) {
+    public ResponseEntity<WarehouseResponse> getWarehouseById(@PathVariable int warehouseId) {
         Optional<Warehouse> result = warehouseService.getWarehouseById(warehouseId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(warehouse -> ResponseEntity.ok(WarehouseResponse.from(warehouse)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createWarehouse(@RequestBody WarehouseRequest warehouseRequest) {
         Warehouse result = warehouseService.createWarehouse(warehouseRequest);
-        return ResponseEntity.created(URI.create("/warehouses/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/warehouses/" + result.getId()))
+                .body(WarehouseResponse.from(result));
     }
 
     @PutMapping("/{warehouseId}")
@@ -53,7 +59,7 @@ public class WarehousesController {
         Optional<Warehouse> result = warehouseService.getWarehouseById(warehouseId);
         if (result.isPresent()) {
             Warehouse updated = warehouseService.updateWarehouse(warehouseId, warehouseRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(WarehouseResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

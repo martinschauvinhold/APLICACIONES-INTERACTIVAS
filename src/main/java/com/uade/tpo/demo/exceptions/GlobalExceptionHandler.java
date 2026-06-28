@@ -11,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.uade.tpo.demo.entity.dto.ApiError;
 
@@ -57,6 +58,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleNotReadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.badRequest().body(new ApiError(
                 400, "Bad Request", "Cuerpo de la solicitud inválido o con valor no reconocido", LocalDateTime.now()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(new ApiError(
+                413, "Payload Too Large", "La imagen supera el máximo permitido (5MB)", LocalDateTime.now()));
     }
 
     @ExceptionHandler(Exception.class)

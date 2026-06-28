@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.dto.OrderRequest;
+import com.uade.tpo.demo.entity.dto.OrderResponse;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.OrderService;
 
@@ -34,26 +34,28 @@ public class OrdersController {
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ArrayList<Order>> getOrders() {
-        return ResponseEntity.ok(orderService.getOrders());
+    public ResponseEntity<List<OrderResponse>> getOrders() {
+        List<OrderResponse> result = orderService.getOrders().stream().map(OrderResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<Order> getOrderById(@PathVariable int orderId) {
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable int orderId) {
         Optional<Order> result = orderService.getOrderById(orderId);
         if (result.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         authorizationService.requireSelfOrAdmin(result.get().getUser().getId());
-        return ResponseEntity.ok(result.get());
+        return ResponseEntity.ok(OrderResponse.from(result.get()));
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<List<Order>> getOrdersByUser(@PathVariable int userId) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByUser(@PathVariable int userId) {
         authorizationService.requireSelfOrAdmin(userId);
-        return ResponseEntity.ok(orderService.getOrdersByUser(userId));
+        List<OrderResponse> result = orderService.getOrdersByUser(userId).stream().map(OrderResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
@@ -63,7 +65,7 @@ public class OrdersController {
         // cualquier userId que venga en el body y se usa el del JWT.
         orderRequest.setUserId(authorizationService.currentUser().getId());
         Order result = orderService.createOrder(orderRequest);
-        return ResponseEntity.created(URI.create("/orders/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/orders/" + result.getId())).body(OrderResponse.from(result));
     }
 
     @PutMapping("/{orderId}")
@@ -73,7 +75,7 @@ public class OrdersController {
         if (result.isPresent()) {
             authorizationService.requireSelfOrAdmin(result.get().getUser().getId());
             Order updated = orderService.updateOrder(orderId, orderRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(OrderResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }
@@ -91,14 +93,14 @@ public class OrdersController {
 
     @PutMapping("/{orderId}/cancel")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<Order> cancelOrder(@PathVariable int orderId) {
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable int orderId) {
         Optional<Order> existing = orderService.getOrderById(orderId);
         if (existing.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         Order result = orderService.cancelOrder(orderId);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(OrderResponse.from(result));
     }
 
     @DeleteMapping("/expired")

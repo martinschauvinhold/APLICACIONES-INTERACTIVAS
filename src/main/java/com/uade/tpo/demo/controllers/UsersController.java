@@ -1,7 +1,7 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.uade.tpo.demo.repository.UserRepository;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.UserRequest;
+import com.uade.tpo.demo.entity.dto.UserResponse;
 import com.uade.tpo.demo.service.UserService;
 
 @RestController
@@ -35,22 +36,23 @@ public class UsersController {
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ArrayList<User>> getUsers() {
-        return ResponseEntity.ok(userService.getUsers());
+    public ResponseEntity<List<UserResponse>> getUsers() {
+        List<UserResponse> result = userService.getUsers().stream().map(UserResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<User> getUserById(@PathVariable int userId) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable int userId) {
         Optional<User> result = userService.getUserById(userId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(u -> ResponseEntity.ok(UserResponse.from(u))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> getMe() {
+    public ResponseEntity<UserResponse> getMe() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .map(ResponseEntity::ok)
+                .map(u -> ResponseEntity.ok(UserResponse.from(u)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -58,7 +60,7 @@ public class UsersController {
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createUser(@Valid @RequestBody UserRequest userRequest) {
         User result = userService.createUser(userRequest);
-        return ResponseEntity.created(URI.create("/users/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/users/" + result.getId())).body(UserResponse.from(result));
     }
 
     @PutMapping("/{userId}")
@@ -67,7 +69,7 @@ public class UsersController {
         Optional<User> result = userService.getUserById(userId);
         if (result.isPresent()) {
             User updated = userService.updateUser(userId, userRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(UserResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

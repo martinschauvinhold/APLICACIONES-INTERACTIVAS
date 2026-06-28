@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +21,7 @@ import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.InventoryRequest;
+import com.uade.tpo.demo.entity.dto.InventoryResponse;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.InventoryService;
@@ -42,26 +42,28 @@ public class InventoryController {
     private AuthorizationService authorizationService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<Inventory>> getInventory() {
-        return ResponseEntity.ok(inventoryService.getInventory());
+    public ResponseEntity<List<InventoryResponse>> getInventory() {
+        List<InventoryResponse> result = inventoryService.getInventory().stream().map(InventoryResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{inventoryId}")
-    public ResponseEntity<Inventory> getInventoryById(@PathVariable int inventoryId) {
+    public ResponseEntity<InventoryResponse> getInventoryById(@PathVariable int inventoryId) {
         Optional<Inventory> result = inventoryService.getInventoryById(inventoryId);
         if (result.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
         requireOwnerOrAdmin(result.get().getVariant().getProduct());
-        return ResponseEntity.ok(result.get());
+        return ResponseEntity.ok(InventoryResponse.from(result.get()));
     }
 
     @GetMapping("/variant/{variantId}")
-    public ResponseEntity<List<Inventory>> getInventoryByVariant(@PathVariable int variantId) {
+    public ResponseEntity<List<InventoryResponse>> getInventoryByVariant(@PathVariable int variantId) {
         ProductVariant variant = productVariantService.getVariantById(variantId)
                 .orElseThrow(() -> new NotFoundException("ProductVariant", variantId));
         requireOwnerOrAdmin(variant.getProduct());
-        return ResponseEntity.ok(inventoryService.getInventoryByVariant(variantId));
+        List<InventoryResponse> result = inventoryService.getInventoryByVariant(variantId).stream().map(InventoryResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
@@ -70,7 +72,7 @@ public class InventoryController {
                 .orElseThrow(() -> new NotFoundException("ProductVariant", inventoryRequest.getVariantId()));
         requireOwnerOrAdmin(variant.getProduct());
         Inventory result = inventoryService.createInventory(inventoryRequest);
-        return ResponseEntity.created(URI.create("/inventory/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/inventory/" + result.getId())).body(InventoryResponse.from(result));
     }
 
     @PutMapping("/{inventoryId}")
@@ -79,7 +81,7 @@ public class InventoryController {
         if (result.isPresent()) {
             requireOwnerOrAdmin(result.get().getVariant().getProduct());
             Inventory updated = inventoryService.updateInventory(inventoryId, inventoryRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(InventoryResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

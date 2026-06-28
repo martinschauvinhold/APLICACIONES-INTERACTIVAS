@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Discount;
 import com.uade.tpo.demo.entity.dto.DiscountRequest;
+import com.uade.tpo.demo.entity.dto.DiscountResponse;
 import com.uade.tpo.demo.service.DiscountService;
 
 @RestController
@@ -28,21 +29,26 @@ public class DiscountsController {
     private DiscountService discountService;
 
     @GetMapping
-    public ResponseEntity<List<Discount>> getDiscounts() {
-        return ResponseEntity.ok(discountService.getDiscounts());
+    public ResponseEntity<List<DiscountResponse>> getDiscounts() {
+        List<DiscountResponse> result = discountService.getDiscounts().stream()
+                .map(DiscountResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{discountId}")
-    public ResponseEntity<Discount> getDiscountById(@PathVariable int discountId) {
+    public ResponseEntity<DiscountResponse> getDiscountById(@PathVariable int discountId) {
         Optional<Discount> result = discountService.getDiscountById(discountId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        return result.map(discount -> ResponseEntity.ok(DiscountResponse.from(discount)))
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createDiscount(@RequestBody DiscountRequest request) {
         Discount result = discountService.createDiscount(request);
-        return ResponseEntity.created(URI.create("/discounts/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/discounts/" + result.getId()))
+                .body(DiscountResponse.from(result));
     }
 
     @PutMapping("/{discountId}")
@@ -50,7 +56,7 @@ public class DiscountsController {
     public ResponseEntity<Object> updateDiscount(@PathVariable int discountId,
             @RequestBody DiscountRequest request) {
         Discount updated = discountService.updateDiscount(discountId, request);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(DiscountResponse.from(updated));
     }
 
     @DeleteMapping("/{discountId}")
@@ -61,7 +67,10 @@ public class DiscountsController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<Discount>> getActiveDiscountsForProduct(@PathVariable int productId) {
-        return ResponseEntity.ok(discountService.getActiveDiscountsForProduct(productId));
+    public ResponseEntity<List<DiscountResponse>> getActiveDiscountsForProduct(@PathVariable int productId) {
+        List<DiscountResponse> result = discountService.getActiveDiscountsForProduct(productId).stream()
+                .map(DiscountResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 }

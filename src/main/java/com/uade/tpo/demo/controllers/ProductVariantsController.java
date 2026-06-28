@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +23,7 @@ import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.PriceTierResponse;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.entity.dto.ProductVariantResponse;
 import com.uade.tpo.demo.entity.dto.VariantStockResponse;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.service.AuthorizationService;
@@ -44,19 +44,24 @@ public class ProductVariantsController {
     private AuthorizationService authorizationService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<ProductVariant>> getVariants() {
-        return ResponseEntity.ok(productVariantService.getVariants());
+    public ResponseEntity<List<ProductVariantResponse>> getVariants() {
+        List<ProductVariantResponse> result = productVariantService.getVariants().stream()
+                .map(ProductVariantResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{variantId}")
-    public ResponseEntity<ProductVariant> getVariantById(@PathVariable int variantId) {
+    public ResponseEntity<ProductVariantResponse> getVariantById(@PathVariable int variantId) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(v -> ResponseEntity.ok(ProductVariantResponse.from(v)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductVariant>> getVariantsByProduct(@PathVariable int productId) {
-        return ResponseEntity.ok(productVariantService.getVariantsByProduct(productId));
+    public ResponseEntity<List<ProductVariantResponse>> getVariantsByProduct(@PathVariable int productId) {
+        List<ProductVariantResponse> result = productVariantService.getVariantsByProduct(productId).stream()
+                .map(ProductVariantResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     // Stock agregado (suma de inventory en todos los depósitos) de lectura
@@ -105,7 +110,7 @@ public class ProductVariantsController {
                 .orElseThrow(() -> new NotFoundException("Product", variantRequest.getProductId()));
         requireOwnerOrAdmin(product);
         ProductVariant result = productVariantService.createVariant(variantRequest);
-        return ResponseEntity.created(URI.create("/variants/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/variants/" + result.getId())).body(ProductVariantResponse.from(result));
     }
 
     @PutMapping("/{variantId}")
@@ -115,7 +120,7 @@ public class ProductVariantsController {
         if (result.isPresent()) {
             requireOwnerOrAdmin(result.get().getProduct());
             ProductVariant updated = productVariantService.updateVariant(variantId, variantRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(ProductVariantResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

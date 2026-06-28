@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Review;
 import com.uade.tpo.demo.entity.dto.ReviewRequest;
+import com.uade.tpo.demo.entity.dto.ReviewResponse;
 import com.uade.tpo.demo.service.ReviewService;
 
 import jakarta.validation.Valid;
@@ -31,26 +31,31 @@ public class ReviewsController {
     private ReviewService reviewService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<Review>> getReviews() {
-        return ResponseEntity.ok(reviewService.getReviews());
+    public ResponseEntity<List<ReviewResponse>> getReviews() {
+        List<ReviewResponse> result = reviewService.getReviews().stream()
+                .map(ReviewResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{reviewId}")
-    public ResponseEntity<Review> getReviewById(@PathVariable int reviewId) {
+    public ResponseEntity<ReviewResponse> getReviewById(@PathVariable int reviewId) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(e -> ResponseEntity.ok(ReviewResponse.from(e)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<Review>> getReviewsByProduct(@PathVariable int productId) {
-        return ResponseEntity.ok(reviewService.getReviewsByProduct(productId));
+    public ResponseEntity<List<ReviewResponse>> getReviewsByProduct(@PathVariable int productId) {
+        List<ReviewResponse> result = reviewService.getReviewsByProduct(productId).stream()
+                .map(ReviewResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
     public ResponseEntity<Object> createReview(@Valid @RequestBody ReviewRequest reviewRequest) {
         Review result = reviewService.createReview(reviewRequest);
-        return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(ReviewResponse.from(result));
     }
 
     @PutMapping("/{reviewId}")
@@ -59,7 +64,7 @@ public class ReviewsController {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {
             Review updated = reviewService.updateReview(reviewId, reviewRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(ReviewResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

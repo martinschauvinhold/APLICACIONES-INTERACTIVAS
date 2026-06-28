@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Coupon;
 import com.uade.tpo.demo.entity.dto.CouponRequest;
+import com.uade.tpo.demo.entity.dto.CouponResponse;
 import com.uade.tpo.demo.service.CouponService;
 
 @RestController
@@ -28,21 +29,22 @@ public class CouponsController {
     private CouponService couponService;
 
     @GetMapping
-    public ResponseEntity<List<Coupon>> getCoupons() {
-        return ResponseEntity.ok(couponService.getCoupons());
+    public ResponseEntity<List<CouponResponse>> getCoupons() {
+        List<CouponResponse> result = couponService.getCoupons().stream().map(CouponResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{couponId}")
-    public ResponseEntity<Coupon> getCouponById(@PathVariable int couponId) {
+    public ResponseEntity<CouponResponse> getCouponById(@PathVariable int couponId) {
         Optional<Coupon> result = couponService.getCouponById(couponId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(c -> ResponseEntity.ok(CouponResponse.from(c))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PreAuthorize("hasRole('admin')")
     @PostMapping
     public ResponseEntity<Object> createCoupon(@Valid @RequestBody CouponRequest request) {
         Coupon result = couponService.createCoupon(request);
-        return ResponseEntity.created(URI.create("/coupons/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/coupons/" + result.getId())).body(CouponResponse.from(result));
     }
 
     @PreAuthorize("hasRole('admin')")
@@ -54,8 +56,8 @@ public class CouponsController {
 
     @PreAuthorize("hasAnyRole('buyer','admin')")
     @GetMapping("/validate/{code}")
-    public ResponseEntity<Coupon> validateCoupon(@PathVariable String code) {
+    public ResponseEntity<CouponResponse> validateCoupon(@PathVariable String code) {
         Coupon coupon = couponService.validateCoupon(code);
-        return ResponseEntity.ok(coupon);
+        return ResponseEntity.ok(CouponResponse.from(coupon));
     }
 }
