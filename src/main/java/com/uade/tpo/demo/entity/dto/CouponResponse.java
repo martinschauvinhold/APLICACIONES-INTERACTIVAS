@@ -1,5 +1,6 @@
 package com.uade.tpo.demo.entity.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.uade.tpo.demo.entity.Coupon;
@@ -9,6 +10,7 @@ public record CouponResponse(
         Integer discountId,
         String discountName,
         String discountType,
+        BigDecimal value,
         String code,
         Integer usageLimit,
         int timesUsed,
@@ -22,6 +24,7 @@ public record CouponResponse(
                 discount != null ? discount.getId() : null,
                 discount != null ? discount.getName() : null,
                 discount != null ? discount.getDiscountType() : null,
+                discount != null ? discount.getValue() : null,
                 coupon.getCode(),
                 coupon.getUsageLimit(),
                 coupon.getTimesUsed(),
