@@ -1,9 +1,10 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,9 @@ import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PriceTierRequest;
+import com.uade.tpo.demo.entity.dto.PriceTierResponse;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.entity.dto.ProductVariantResponse;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.InventoryRepository;
 import com.uade.tpo.demo.repository.PriceTierRepository;
@@ -35,19 +38,47 @@ public class ProductVariantServiceImpl implements ProductVariantService {
     @Autowired
     private PriceTierRepository priceTierRepository;
 
-    public ArrayList<ProductVariant> getVariants() {
-        return new ArrayList<>(productVariantRepository.findAll());
+    public List<ProductVariantResponse> getVariants() {
+        return hydrate(productVariantRepository.findAll());
     }
 
     public Optional<ProductVariant> getVariantById(int variantId) {
         return productVariantRepository.findById(variantId);
     }
 
-    public List<ProductVariant> getVariantsByProduct(int productId) {
+    public List<ProductVariantResponse> getVariantsByProduct(int productId) {
         if (!productRepository.existsById(productId)) {
             throw new NotFoundException("Product", productId);
         }
-        return productVariantRepository.findByProductId(productId);
+        return hydrate(productVariantRepository.findByProductId(productId));
+    }
+
+    /**
+     * Arma la respuesta de un listado de variantes con su stock y tiers ya
+     * calculados en lote (2 consultas en total, no 2 por variante), para no
+     * incurrir en N+1 al traer el catálogo completo.
+     */
+    private List<ProductVariantResponse> hydrate(List<ProductVariant> variants) {
+        if (variants.isEmpty()) {
+            return List.of();
+        }
+        List<Integer> variantIds = variants.stream().map(ProductVariant::getId).toList();
+
+        Map<Integer, Integer> stockByVariant = inventoryRepository.findByVariantIdIn(variantIds).stream()
+                .collect(Collectors.groupingBy(i -> i.getVariant().getId(),
+                        Collectors.summingInt(Inventory::getStockQuantity)));
+
+        Map<Integer, List<PriceTierResponse>> tiersByVariant = priceTierRepository.findByVariantIdIn(variantIds)
+                .stream()
+                .collect(Collectors.groupingBy(t -> t.getVariant().getId(),
+                        Collectors.mapping(
+                                t -> new PriceTierResponse(t.getId(), t.getMinQuantity(), t.getUnitPrice(), t.getCurrency()),
+                                Collectors.toList())));
+
+        return variants.stream()
+                .map(v -> ProductVariantResponse.from(v, stockByVariant.getOrDefault(v.getId(), 0),
+                        tiersByVariant.getOrDefault(v.getId(), List.of())))
+                .toList();
     }
 
     public ProductVariant createVariant(ProductVariantRequest variantRequest) {

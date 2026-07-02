@@ -1,6 +1,5 @@
 package com.uade.tpo.demo.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,13 +7,14 @@ import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.entity.dto.ProductVariantResponse;
 
 public interface ProductVariantService {
-    ArrayList<ProductVariant> getVariants();
+    List<ProductVariantResponse> getVariants();
 
     Optional<ProductVariant> getVariantById(int variantId);
 
-    List<ProductVariant> getVariantsByProduct(int productId);
+    List<ProductVariantResponse> getVariantsByProduct(int productId);
 
     ProductVariant createVariant(ProductVariantRequest variantRequest);
 

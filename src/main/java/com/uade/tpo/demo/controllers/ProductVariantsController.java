@@ -45,9 +45,7 @@ public class ProductVariantsController {
 
     @GetMapping
     public ResponseEntity<List<ProductVariantResponse>> getVariants() {
-        List<ProductVariantResponse> result = productVariantService.getVariants().stream()
-                .map(ProductVariantResponse::from).toList();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(productVariantService.getVariants());
     }
 
     @GetMapping("/{variantId}")
@@ -59,9 +57,7 @@ public class ProductVariantsController {
 
     @GetMapping("/product/{productId}")
     public ResponseEntity<List<ProductVariantResponse>> getVariantsByProduct(@PathVariable int productId) {
-        List<ProductVariantResponse> result = productVariantService.getVariantsByProduct(productId).stream()
-                .map(ProductVariantResponse::from).toList();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(productVariantService.getVariantsByProduct(productId));
     }
 
     // Stock agregado (suma de inventory en todos los depósitos) de lectura
