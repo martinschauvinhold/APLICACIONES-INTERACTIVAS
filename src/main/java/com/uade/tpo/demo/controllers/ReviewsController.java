@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.Review;
 import com.uade.tpo.demo.entity.dto.ReviewRequest;
 import com.uade.tpo.demo.entity.dto.ReviewResponse;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.ReviewService;
 
 import jakarta.validation.Valid;
@@ -29,6 +30,9 @@ public class ReviewsController {
 
     @Autowired
     private ReviewService reviewService;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> getReviews() {
@@ -54,6 +58,8 @@ public class ReviewsController {
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
     public ResponseEntity<Object> createReview(@Valid @RequestBody ReviewRequest reviewRequest) {
+        // El autor siempre es quien está autenticado, no lo que mande el body.
+        reviewRequest.setUserId(authorizationService.currentUser().getId());
         Review result = reviewService.createReview(reviewRequest);
         return ResponseEntity.created(URI.create("/reviews/" + result.getId())).body(ReviewResponse.from(result));
     }
@@ -63,6 +69,7 @@ public class ReviewsController {
     public ResponseEntity<Object> updateReview(@PathVariable int reviewId, @Valid @RequestBody ReviewRequest reviewRequest) {
         Optional<Review> result = reviewService.getReviewById(reviewId);
         if (result.isPresent()) {
+            authorizationService.requireSelfOrAdmin(result.get().getUser().getId());
             Review updated = reviewService.updateReview(reviewId, reviewRequest);
             return ResponseEntity.ok(ReviewResponse.from(updated));
         }

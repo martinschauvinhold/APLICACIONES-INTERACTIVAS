@@ -15,9 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Delivery;
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.dto.DeliveryRequest;
 import com.uade.tpo.demo.entity.dto.DeliveryResponse;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.DeliveryService;
+import com.uade.tpo.demo.service.OrderService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class DeliveriesController {
 
     private final DeliveryService deliveryService;
+    private final OrderService orderService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
@@ -40,11 +46,16 @@ public class DeliveriesController {
 
     @GetMapping("/{deliveryId}")
     public ResponseEntity<DeliveryResponse> getDeliveryById(@PathVariable Integer deliveryId) {
-        return ResponseEntity.ok(DeliveryResponse.from(deliveryService.getDeliveryById(deliveryId)));
+        Delivery delivery = deliveryService.getDeliveryById(deliveryId);
+        authorizationService.requireSelfOrAdmin(delivery.getOrder().getUser().getId());
+        return ResponseEntity.ok(DeliveryResponse.from(delivery));
     }
 
     @GetMapping("/order/{orderId}")
     public ResponseEntity<List<DeliveryResponse>> getDeliveriesByOrder(@PathVariable Integer orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        authorizationService.requireSelfOrAdmin(order.getUser().getId());
         List<DeliveryResponse> result = deliveryService.getDeliveriesByOrder(orderId).stream()
                 .map(DeliveryResponse::from)
                 .toList();
