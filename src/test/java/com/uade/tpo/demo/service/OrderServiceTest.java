@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.uade.tpo.demo.entity.Address;
 import com.uade.tpo.demo.entity.Category;
+import com.uade.tpo.demo.entity.Coupon;
+import com.uade.tpo.demo.entity.Discount;
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.OrderItem;
@@ -171,6 +173,96 @@ class OrderServiceTest {
     }
 
     @Test
+    void createOrder_deberiaAplicarDescuento_cuandoCuponEsDeTodaLaTienda() {
+        // Arrange
+        var user = User.builder().id(1).build();
+        var address = Address.builder().id(1).build();
+        var category = Category.builder().id(1).build();
+        var product = Product.builder().id(10).category(category).build();
+        var variant = ProductVariant.builder().id(1).product(product).basePrice(new BigDecimal("100")).build();
+        var inventory = Inventory.builder().id(1).variant(variant).stockQuantity(50).build();
+        var discount = Discount.builder().discountType("PERCENTAGE").value(new BigDecimal("10")).appliesTo("ALL").build();
+        var coupon = Coupon.builder().code("BIENVENIDA10").discount(discount).usageLimit(100).timesUsed(0).build();
+        var savedOrder = Order.builder().id(100).status(OrderStatus.PENDING).build();
+
+        var itemReq = new OrderItemRequest();
+        itemReq.setVariantId(1);
+        itemReq.setQuantity(2);
+
+        var request = new OrderRequest();
+        request.setUserId(1);
+        request.setShippingAddressId(1);
+        request.setCouponCode("BIENVENIDA10");
+        request.setItems(List.of(itemReq));
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(addressRepository.findById(1)).thenReturn(Optional.of(address));
+        when(couponService.validateCoupon("BIENVENIDA10")).thenReturn(coupon);
+        when(couponRepository.findByCodeForUpdate("BIENVENIDA10")).thenReturn(Optional.of(coupon));
+        when(productVariantRepository.findById(1)).thenReturn(Optional.of(variant));
+        when(inventoryRepository.findByVariantId(1)).thenReturn(List.of(inventory));
+        when(priceTierRepository.findByVariantId(1)).thenReturn(List.of());
+        when(discountService.getActiveDiscountsForProduct(10)).thenReturn(List.of());
+        when(orderRepository.save(any())).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            o.setId(100);
+            return o;
+        });
+        when(orderItemRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        orderService.createOrder(request);
+
+        // Assert: 2 unidades a $100 con 10% off = $180 (antes del fix, el cupón "ALL" no aplicaba nada = $200)
+        var itemsCaptor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(orderItemRepository).saveAll(itemsCaptor.capture());
+        List<OrderItem> savedItems = itemsCaptor.getValue();
+        assertThat(savedItems.get(0).getSubtotal()).isEqualByComparingTo("180");
+        assertThat(coupon.getTimesUsed()).isEqualTo(1);
+    }
+
+    @Test
+    void createOrder_deberiaLanzarBusinessRuleException_cuandoCuponAlcanzoLimiteAlMomentoDeIncrementar() {
+        // Arrange: validateCoupon (sin lock) ve el cupón todavía disponible, pero
+        // el re-chequeo con lock (findByCodeForUpdate) lo encuentra ya en el límite
+        // — simula que otra compra concurrente lo agotó justo antes.
+        var user = User.builder().id(1).build();
+        var address = Address.builder().id(1).build();
+        var category = Category.builder().id(1).build();
+        var product = Product.builder().id(10).category(category).build();
+        var variant = ProductVariant.builder().id(1).product(product).basePrice(new BigDecimal("100")).build();
+        var inventory = Inventory.builder().id(1).variant(variant).stockQuantity(50).build();
+        var discount = Discount.builder().discountType("PERCENTAGE").value(new BigDecimal("10")).appliesTo("ALL").build();
+        var coupon = Coupon.builder().code("LIMITADO").discount(discount).usageLimit(1).timesUsed(0).build();
+        var lockedCoupon = Coupon.builder().code("LIMITADO").discount(discount).usageLimit(1).timesUsed(1).build();
+
+        var itemReq = new OrderItemRequest();
+        itemReq.setVariantId(1);
+        itemReq.setQuantity(1);
+
+        var request = new OrderRequest();
+        request.setUserId(1);
+        request.setShippingAddressId(1);
+        request.setCouponCode("LIMITADO");
+        request.setItems(List.of(itemReq));
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(addressRepository.findById(1)).thenReturn(Optional.of(address));
+        when(couponService.validateCoupon("LIMITADO")).thenReturn(coupon);
+        when(couponRepository.findByCodeForUpdate("LIMITADO")).thenReturn(Optional.of(lockedCoupon));
+        when(productVariantRepository.findById(1)).thenReturn(Optional.of(variant));
+        when(inventoryRepository.findByVariantId(1)).thenReturn(List.of(inventory));
+        when(priceTierRepository.findByVariantId(1)).thenReturn(List.of());
+        when(discountService.getActiveDiscountsForProduct(10)).thenReturn(List.of());
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.createOrder(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("limite de usos");
+        verify(couponRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void createOrder_deberiaLanzarNotFoundException_cuandoUserNoExiste() {
         // Arrange
         var request = new OrderRequest();
@@ -249,18 +341,38 @@ class OrderServiceTest {
     }
 
     @Test
-    void updateOrder_deberiaActualizarYRetornar_cuandoIdExiste() {
+    void updateOrder_deberiaActualizarDireccionYRetornar_cuandoIdYDireccionExisten() {
         // Arrange
         var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
+        var newAddress = Address.builder().id(2).build();
+        var request = new OrderRequest();
+        request.setShippingAddressId(2);
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        when(addressRepository.findById(2)).thenReturn(Optional.of(newAddress));
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        var result = orderService.updateOrder(1, new OrderRequest());
+        var result = orderService.updateOrder(1, request);
 
         // Assert
         assertThat(result.getId()).isEqualTo(1);
+        assertThat(result.getShippingAddress()).isEqualTo(newAddress);
         verify(orderRepository).save(any());
+    }
+
+    @Test
+    void updateOrder_deberiaLanzarNotFoundException_cuandoDireccionNoExiste() {
+        // Arrange
+        var order = Order.builder().id(1).status(OrderStatus.PENDING).build();
+        var request = new OrderRequest();
+        request.setShippingAddressId(99);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        when(addressRepository.findById(99)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.updateOrder(1, request))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -314,7 +426,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         when(orderItemRepository.findByOrderId(1)).thenReturn(List.of(item));
-        when(inventoryRepository.findByVariantId(1)).thenReturn(List.of(inventory));
+        when(inventoryRepository.findByVariantIdForUpdate(1)).thenReturn(List.of(inventory));
         when(inventoryRepository.save(any())).thenReturn(inventory);
         when(paymentRepository.findByOrderId(1)).thenReturn(List.of(payment));
         when(paymentRepository.save(any())).thenReturn(payment);
