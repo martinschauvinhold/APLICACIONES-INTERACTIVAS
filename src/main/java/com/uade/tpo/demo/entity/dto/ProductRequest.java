@@ -9,6 +9,7 @@ public class ProductRequest {
     @NotBlank private String name;
     private String description;
     private String brand;
+    private String imageUrl;
     @Positive private int categoryId;
     // Lo completa el controller con el id del seller autenticado; un admin
     // puede mandarlo explícito para crear un producto a nombre de otro seller.

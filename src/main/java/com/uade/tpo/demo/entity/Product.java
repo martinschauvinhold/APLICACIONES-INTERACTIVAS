@@ -47,6 +47,9 @@ public class Product {
     @Column(name = "brand")
     private String brand;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Builder.Default
     @Column(name = "is_active")
     private boolean isActive = true;

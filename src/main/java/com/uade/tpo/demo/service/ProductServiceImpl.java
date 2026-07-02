@@ -50,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
                 .name(productRequest.getName())
                 .description(productRequest.getDescription())
                 .brand(productRequest.getBrand())
+                .imageUrl(productRequest.getImageUrl())
                 .category(category)
                 .seller(seller)
                 .isActive(true)
@@ -66,6 +67,7 @@ public class ProductServiceImpl implements ProductService {
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
         product.setBrand(productRequest.getBrand());
+        if (productRequest.getImageUrl() != null) product.setImageUrl(productRequest.getImageUrl());
         product.setCategory(category);
         product.setUpdatedAt(new Date());
         // Productos creados antes de existir `seller` no tienen dueño: permitir
