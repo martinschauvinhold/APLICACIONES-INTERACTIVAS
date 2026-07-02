@@ -202,16 +202,34 @@ public class OrderServiceImpl implements OrderService {
         orderItemRepository.saveAll(orderItems);
 
         if (coupon != null) {
-            coupon.setTimesUsed(coupon.getTimesUsed() + 1);
-            couponRepository.save(coupon);
+            // Re-lee el cupón con lock pesimista y re-chequea el usageLimit acá,
+            // justo antes de incrementar: si dos compras con el mismo cupón llegan
+            // casi juntas, la validación de arriba (sin lock) puede haber pasado
+            // para las dos antes de que ninguna incrementara timesUsed.
+            String couponCode = coupon.getCode();
+            Coupon lockedCoupon = couponRepository.findByCodeForUpdate(couponCode)
+                    .orElseThrow(() -> new NotFoundException("Coupon", couponCode));
+            if (lockedCoupon.getUsageLimit() != null && lockedCoupon.getTimesUsed() >= lockedCoupon.getUsageLimit()) {
+                throw new BusinessRuleException("El cupon '" + lockedCoupon.getCode() + "' alcanzo el limite de usos ("
+                        + lockedCoupon.getUsageLimit() + ")");
+            }
+            lockedCoupon.setTimesUsed(lockedCoupon.getTimesUsed() + 1);
+            couponRepository.save(lockedCoupon);
         }
 
         return order;
     }
 
+    // Solo permite corregir la dirección de envío (p. ej. mientras el pedido
+    // sigue PENDING/PAID sin despachar). Cambiar items o cupón implicaría
+    // re-calcular precios, descuentos y stock reservado — no es lo que hace
+    // este endpoint hoy, para eso hay que cancelar y crear un pedido nuevo.
     public Order updateOrder(int orderId, OrderRequest orderRequest) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order", orderId));
+        Address address = addressRepository.findById(orderRequest.getShippingAddressId())
+                .orElseThrow(() -> new NotFoundException("Address", orderRequest.getShippingAddressId()));
+        order.setShippingAddress(address);
         order.setUpdatedAt(new Date());
         return orderRepository.save(order);
     }
@@ -242,7 +260,11 @@ public class OrderServiceImpl implements OrderService {
             logger.warn("Cancelando orden {} en estado PAID — se restaurará stock y se marcarán pagos como REFUNDED", orderId);
             List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
             for (OrderItem item : items) {
-                List<Inventory> inventoryRows = inventoryRepository.findByVariantId(item.getVariant().getId());
+                // Lock pesimista: si esta cancelación concurre con un pago que está
+                // descontando stock de la misma variante (PaymentServiceImpl.decreaseStock
+                // usa el mismo lock), una espera a que la otra termine para no perder
+                // el incremento (lost update).
+                List<Inventory> inventoryRows = inventoryRepository.findByVariantIdForUpdate(item.getVariant().getId());
                 if (!inventoryRows.isEmpty()) {
                     Inventory inv = inventoryRows.get(0);
                     inv.setStockQuantity(inv.getStockQuantity() + item.getQuantity());
@@ -272,8 +294,12 @@ public class OrderServiceImpl implements OrderService {
         return discount.getValue();
     }
 
-    // Verifica si un descuento aplica a un producto dado (por producto o por categoria)
+    // Verifica si un descuento aplica a un producto dado (por producto, por categoria,
+    // o a toda la tienda)
     private boolean couponAppliesTo(Discount discount, Product product) {
+        if ("ALL".equals(discount.getAppliesTo())) {
+            return true;
+        }
         if ("PRODUCT".equals(discount.getAppliesTo()) && discount.getProduct() != null) {
             return discount.getProduct().getId().equals(product.getId());
         }
