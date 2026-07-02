@@ -14,9 +14,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.ProductReturn;
 import com.uade.tpo.demo.entity.dto.ProductReturnRequest;
 import com.uade.tpo.demo.entity.dto.ProductReturnResponse;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
+import com.uade.tpo.demo.service.OrderService;
 import com.uade.tpo.demo.service.ProductReturnService;
 
 import jakarta.validation.Valid;
@@ -28,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 public class ReturnsController {
 
     private final ProductReturnService productReturnService;
+    private final OrderService orderService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
@@ -41,12 +47,17 @@ public class ReturnsController {
     @GetMapping("/{returnId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<ProductReturnResponse> getReturnById(@PathVariable Integer returnId) {
-        return ResponseEntity.ok(ProductReturnResponse.from(productReturnService.getReturnById(returnId)));
+        ProductReturn productReturn = productReturnService.getReturnById(returnId);
+        authorizationService.requireSelfOrAdmin(productReturn.getOrder().getUser().getId());
+        return ResponseEntity.ok(ProductReturnResponse.from(productReturn));
     }
 
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
     public ResponseEntity<List<ProductReturnResponse>> getReturnsByOrder(@PathVariable Integer orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        authorizationService.requireSelfOrAdmin(order.getUser().getId());
         List<ProductReturnResponse> result = productReturnService.getReturnsByOrder(orderId).stream()
                 .map(ProductReturnResponse::from)
                 .toList();
@@ -56,6 +67,9 @@ public class ReturnsController {
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
     public ResponseEntity<ProductReturnResponse> createReturn(@Valid @RequestBody ProductReturnRequest request) {
+        Order order = orderService.getOrderById(request.orderId())
+                .orElseThrow(() -> new NotFoundException("Order", request.orderId()));
+        authorizationService.requireSelf(order.getUser().getId());
         ProductReturn created = productReturnService.createReturn(request);
         return ResponseEntity.created(URI.create("/returns/" + created.getId()))
                 .body(ProductReturnResponse.from(created));
