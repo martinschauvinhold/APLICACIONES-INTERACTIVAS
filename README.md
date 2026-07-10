@@ -1,31 +1,5 @@
 # Vector Tech — E-commerce (TPO Aplicaciones Interactivas)
 
-Proyecto completo: **backend** (API REST con Spring Boot 3 + SQL Server, esta
-carpeta) y **frontend** (React + Vite + Redux Toolkit, carpeta
-[`frontend/`](frontend/)).
-
-## Cómo levantar el proyecto completo
-
-1. **Backend**: seguí los pasos de este README (sección "Primera vez" más
-   abajo) hasta tener la app corriendo en `http://localhost:8080`.
-2. **Frontend**: en otra terminal,
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   Abre en `http://localhost:5173` y ya se conecta al backend.
-3. Con `make seed-db` corrido (ver más abajo), ya tenés usuarios de prueba
-   para loguearte como `admin` o `seller`. Para comprador, registrate desde
-   la pantalla de registro del frontend.
-
-Ver [`frontend/README.md`](frontend/README.md) para el detalle del frontend
-(estructura, comandos, arquitectura de estado).
-
----
-
-## Backend
-
 API REST construida con Spring Boot 3 y SQL Server.
 
 ---
