@@ -12,4 +12,6 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     List<OrderItem> findByOrderId(int orderId);
 
     List<OrderItem> findByVariant_Product_Seller_Id(int sellerId);
+
+    boolean existsByVariant_ProductId(int productId);
 }

@@ -11,11 +11,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductImage;
+import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
@@ -24,8 +26,14 @@ import com.uade.tpo.demo.exceptions.BusinessRuleException;
 import com.uade.tpo.demo.exceptions.ConflictException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
+import com.uade.tpo.demo.repository.InventoryRepository;
+import com.uade.tpo.demo.repository.OrderItemRepository;
+import com.uade.tpo.demo.repository.PriceTierRepository;
 import com.uade.tpo.demo.repository.ProductImageRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
+import com.uade.tpo.demo.repository.ProductVariantRepository;
+import com.uade.tpo.demo.repository.ReviewRepository;
+import com.uade.tpo.demo.repository.TagRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @Service
@@ -45,6 +53,24 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private StorageService storageService;
+
+    @Autowired
+    private ProductVariantRepository productVariantRepository;
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private PriceTierRepository priceTierRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     public Page<ProductResponse> getProducts(Integer categoryId, Integer sellerId, String search, Boolean active,
             Integer viewerSellerId, Pageable pageable) {
@@ -131,8 +157,25 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
+    @Transactional
     public void deleteProduct(int productId) {
+        // Con ventas reales no se borra: perderíamos el detalle de pedidos ya
+        // facturados. Sin ventas, sí se puede — variantes/imágenes/reseñas se
+        // borran en cascada a mano (no hay @OneToMany con cascade en las entidades).
+        if (orderItemRepository.existsByVariant_ProductId(productId)) {
+            throw new ConflictException("No se puede borrar un producto con ventas asociadas.");
+        }
+
         try {
+            List<ProductVariant> variants = productVariantRepository.findByProductId(productId);
+            for (ProductVariant variant : variants) {
+                inventoryRepository.deleteAll(inventoryRepository.findByVariantId(variant.getId()));
+                priceTierRepository.deleteAll(priceTierRepository.findByVariantId(variant.getId()));
+            }
+            productVariantRepository.deleteAll(variants);
+            productImageRepository.deleteAll(productImageRepository.findByProductId(productId));
+            reviewRepository.deleteAll(reviewRepository.findByProductId(productId));
+            tagRepository.deleteAll(tagRepository.findByProductId(productId));
             productRepository.deleteById(productId);
             productRepository.flush();
         } catch (DataIntegrityViolationException ex) {

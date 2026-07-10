@@ -23,10 +23,17 @@ import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.ConflictException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
+import com.uade.tpo.demo.repository.InventoryRepository;
+import com.uade.tpo.demo.repository.OrderItemRepository;
+import com.uade.tpo.demo.repository.PriceTierRepository;
 import com.uade.tpo.demo.repository.ProductImageRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
+import com.uade.tpo.demo.repository.ProductVariantRepository;
+import com.uade.tpo.demo.repository.ReviewRepository;
+import com.uade.tpo.demo.repository.TagRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,6 +53,24 @@ class ProductServiceTest {
 
     @Mock
     private StorageService storageService;
+
+    @Mock
+    private ProductVariantRepository productVariantRepository;
+
+    @Mock
+    private InventoryRepository inventoryRepository;
+
+    @Mock
+    private PriceTierRepository priceTierRepository;
+
+    @Mock
+    private ReviewRepository reviewRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private OrderItemRepository orderItemRepository;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -276,11 +301,27 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_deberiaEliminar() {
+    void deleteProduct_deberiaEliminar_cuandoNoTieneVentas() {
+        // Arrange
+        when(orderItemRepository.existsByVariant_ProductId(1)).thenReturn(false);
+        when(productVariantRepository.findByProductId(1)).thenReturn(List.of());
+
         // Act
         productService.deleteProduct(1);
 
         // Assert
         verify(productRepository).deleteById(1);
+    }
+
+    @Test
+    void deleteProduct_deberiaLanzarConflictException_cuandoTieneVentas() {
+        // Arrange
+        when(orderItemRepository.existsByVariant_ProductId(1)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productService.deleteProduct(1))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("ventas");
+        verify(productRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 }
