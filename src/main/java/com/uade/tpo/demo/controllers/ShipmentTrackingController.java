@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Delivery;
 import com.uade.tpo.demo.entity.ShipmentTracking;
 import com.uade.tpo.demo.entity.dto.ShipmentTrackingRequest;
 import com.uade.tpo.demo.entity.dto.ShipmentTrackingResponse;
 import com.uade.tpo.demo.entity.dto.TrackingStatusRequest;
+import com.uade.tpo.demo.service.AuthorizationService;
+import com.uade.tpo.demo.service.DeliveryService;
 import com.uade.tpo.demo.service.ShipmentTrackingService;
 
 import jakarta.validation.Valid;
@@ -28,9 +31,13 @@ import lombok.RequiredArgsConstructor;
 public class ShipmentTrackingController {
 
     private final ShipmentTrackingService trackingService;
+    private final DeliveryService deliveryService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping("/delivery/{deliveryId}")
     public ResponseEntity<List<ShipmentTrackingResponse>> getByDelivery(@PathVariable Integer deliveryId) {
+        Delivery delivery = deliveryService.getDeliveryById(deliveryId);
+        authorizationService.requireSelfOrAdmin(delivery.getOrder().getUser().getId());
         List<ShipmentTrackingResponse> result = trackingService.getByDeliveryId(deliveryId).stream()
                 .map(ShipmentTrackingResponse::from).toList();
         return ResponseEntity.ok(result);
@@ -38,7 +45,9 @@ public class ShipmentTrackingController {
 
     @GetMapping("/{trackingId}")
     public ResponseEntity<ShipmentTrackingResponse> getById(@PathVariable Integer trackingId) {
-        return ResponseEntity.ok(ShipmentTrackingResponse.from(trackingService.getById(trackingId)));
+        ShipmentTracking tracking = trackingService.getById(trackingId);
+        authorizationService.requireSelfOrAdmin(tracking.getDelivery().getOrder().getUser().getId());
+        return ResponseEntity.ok(ShipmentTrackingResponse.from(tracking));
     }
 
     @PostMapping
