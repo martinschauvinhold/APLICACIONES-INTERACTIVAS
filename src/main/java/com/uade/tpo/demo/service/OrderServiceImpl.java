@@ -286,8 +286,10 @@ public class OrderServiceImpl implements OrderService {
 
     // Calcula el valor en $ de un descuento aplicado a un precio unitario.
     // PERCENTAGE: porcentaje sobre el precio. FIXED: monto fijo.
+    // Comparación case-insensitive: discountType/appliesTo son VARCHAR libres en la
+    // base (sin constraint de casing), y hay datos existentes guardados en minúsculas.
     private BigDecimal calculateDiscountValue(Discount discount, BigDecimal unitPrice) {
-        if ("PERCENTAGE".equals(discount.getDiscountType())) {
+        if ("PERCENTAGE".equalsIgnoreCase(discount.getDiscountType())) {
             return unitPrice.multiply(discount.getValue())
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         }
@@ -297,13 +299,13 @@ public class OrderServiceImpl implements OrderService {
     // Verifica si un descuento aplica a un producto dado (por producto, por categoria,
     // o a toda la tienda)
     private boolean couponAppliesTo(Discount discount, Product product) {
-        if ("ALL".equals(discount.getAppliesTo())) {
+        if ("ALL".equalsIgnoreCase(discount.getAppliesTo())) {
             return true;
         }
-        if ("PRODUCT".equals(discount.getAppliesTo()) && discount.getProduct() != null) {
+        if ("PRODUCT".equalsIgnoreCase(discount.getAppliesTo()) && discount.getProduct() != null) {
             return discount.getProduct().getId().equals(product.getId());
         }
-        if ("CATEGORY".equals(discount.getAppliesTo()) && discount.getCategory() != null) {
+        if ("CATEGORY".equalsIgnoreCase(discount.getAppliesTo()) && discount.getCategory() != null) {
             return discount.getCategory().getId().equals(product.getCategory().getId());
         }
         return false;

@@ -13,7 +13,7 @@ import com.uade.tpo.demo.entity.dto.PaymentResult;
 public class SimulatedPaymentProcessor implements PaymentProcessor {
 
     private static final Set<String> VALID_METHODS = Set.of(
-            "CREDIT_CARD", "DEBIT_CARD", "CASH");
+            "CREDIT_CARD", "DEBIT_CARD", "CASH", "MERCADO_PAGO");
 
     private boolean simulateFailure = false;
 
