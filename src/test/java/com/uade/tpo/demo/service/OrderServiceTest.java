@@ -222,6 +222,106 @@ class OrderServiceTest {
     }
 
     @Test
+    void createOrder_deberiaAplicarDescuento_cuandoDiscountTypeYAppliesToEstanEnMinuscula() {
+        // Arrange: bug real encontrado — discountType/appliesTo son VARCHAR libres en la
+        // base y los datos existentes están guardados en minúsculas ("percentage", "all"),
+        // pero antes del fix se comparaban contra literales en mayúsculas ("PERCENTAGE",
+        // "ALL"), así que el descuento nunca se aplicaba pese a que el cupón se validaba
+        // y consumía bien (quedaba discountApplied=0 siempre).
+        var user = User.builder().id(1).build();
+        var address = Address.builder().id(1).build();
+        var category = Category.builder().id(1).build();
+        var product = Product.builder().id(10).category(category).build();
+        var variant = ProductVariant.builder().id(1).product(product).basePrice(new BigDecimal("100")).build();
+        var inventory = Inventory.builder().id(1).variant(variant).stockQuantity(50).build();
+        var discount = Discount.builder().discountType("percentage").value(new BigDecimal("15")).appliesTo("all").build();
+        var coupon = Coupon.builder().code("UNAVEZ").discount(discount).usageLimit(1).timesUsed(0).build();
+
+        var itemReq = new OrderItemRequest();
+        itemReq.setVariantId(1);
+        itemReq.setQuantity(1);
+
+        var request = new OrderRequest();
+        request.setUserId(1);
+        request.setShippingAddressId(1);
+        request.setCouponCode("UNAVEZ");
+        request.setItems(List.of(itemReq));
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(addressRepository.findById(1)).thenReturn(Optional.of(address));
+        when(couponService.validateCoupon("UNAVEZ")).thenReturn(coupon);
+        when(couponRepository.findByCodeForUpdate("UNAVEZ")).thenReturn(Optional.of(coupon));
+        when(productVariantRepository.findById(1)).thenReturn(Optional.of(variant));
+        when(inventoryRepository.findByVariantId(1)).thenReturn(List.of(inventory));
+        when(priceTierRepository.findByVariantId(1)).thenReturn(List.of());
+        when(discountService.getActiveDiscountsForProduct(10)).thenReturn(List.of());
+        when(orderRepository.save(any())).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            o.setId(100);
+            return o;
+        });
+        when(orderItemRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        orderService.createOrder(request);
+
+        // Assert: 1 unidad a $100 con 15% off = $85 (antes del fix quedaba en $100,
+        // porque "percentage"/"all" en minúscula no matcheaban "PERCENTAGE"/"ALL")
+        var itemsCaptor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(orderItemRepository).saveAll(itemsCaptor.capture());
+        List<OrderItem> savedItems = itemsCaptor.getValue();
+        assertThat(savedItems.get(0).getDiscountApplied()).isEqualByComparingTo("15");
+        assertThat(savedItems.get(0).getSubtotal()).isEqualByComparingTo("85");
+    }
+
+    @Test
+    void createOrder_deberiaAplicarDescuentoDeProducto_cuandoDiscountTypeEstaEnMinuscula() {
+        // Arrange: mismo bug que el test anterior, pero para el descuento por
+        // producto/categoría (discountService.getActiveDiscountsForProduct), que
+        // pasa por el mismo calculateDiscountValue — sin cupón de por medio.
+        var user = User.builder().id(1).build();
+        var address = Address.builder().id(1).build();
+        var category = Category.builder().id(1).build();
+        var product = Product.builder().id(10).category(category).build();
+        var variant = ProductVariant.builder().id(1).product(product).basePrice(new BigDecimal("200")).build();
+        var inventory = Inventory.builder().id(1).variant(variant).stockQuantity(50).build();
+        var categoryDiscount = Discount.builder().discountType("percentage").value(new BigDecimal("10")).appliesTo("category").category(category).build();
+
+        var itemReq = new OrderItemRequest();
+        itemReq.setVariantId(1);
+        itemReq.setQuantity(1);
+
+        var request = new OrderRequest();
+        request.setUserId(1);
+        request.setShippingAddressId(1);
+        request.setItems(List.of(itemReq));
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(addressRepository.findById(1)).thenReturn(Optional.of(address));
+        when(productVariantRepository.findById(1)).thenReturn(Optional.of(variant));
+        when(inventoryRepository.findByVariantId(1)).thenReturn(List.of(inventory));
+        when(priceTierRepository.findByVariantId(1)).thenReturn(List.of());
+        when(discountService.getActiveDiscountsForProduct(10)).thenReturn(List.of(categoryDiscount));
+        when(orderRepository.save(any())).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            o.setId(102);
+            return o;
+        });
+        when(orderItemRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        orderService.createOrder(request);
+
+        // Assert: 1 unidad a $200 con 10% off = $180 (antes del fix quedaba en $200,
+        // porque "percentage" en minúscula no matcheaba "PERCENTAGE")
+        var itemsCaptor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(orderItemRepository).saveAll(itemsCaptor.capture());
+        List<OrderItem> savedItems = itemsCaptor.getValue();
+        assertThat(savedItems.get(0).getDiscountApplied()).isEqualByComparingTo("20");
+        assertThat(savedItems.get(0).getSubtotal()).isEqualByComparingTo("180");
+    }
+
+    @Test
     void createOrder_deberiaLanzarBusinessRuleException_cuandoCuponAlcanzoLimiteAlMomentoDeIncrementar() {
         // Arrange: validateCoupon (sin lock) ve el cupón todavía disponible, pero
         // el re-chequeo con lock (findByCodeForUpdate) lo encuentra ya en el límite
