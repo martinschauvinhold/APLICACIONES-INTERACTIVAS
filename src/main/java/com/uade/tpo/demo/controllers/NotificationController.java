@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Notification;
 import com.uade.tpo.demo.entity.dto.NotificationResponse;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
@@ -31,12 +34,16 @@ public class NotificationController {
 
     @GetMapping("/unread")
     public ResponseEntity<List<NotificationResponse>> getUnread() {
-        List<NotificationResponse> result = notificationService.getUnread().stream().map(NotificationResponse::from).toList();
+        Integer userId = authorizationService.currentUser().getId();
+        List<NotificationResponse> result = notificationService.getUnreadByUser(userId).stream()
+                .map(NotificationResponse::from).toList();
         return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<NotificationResponse> markAsRead(@PathVariable Integer notificationId) {
+        Notification notification = notificationService.getById(notificationId);
+        authorizationService.requireSelfOrAdmin(notification.getUser().getId());
         return ResponseEntity.ok(NotificationResponse.from(notificationService.markAsRead(notificationId)));
     }
 }
