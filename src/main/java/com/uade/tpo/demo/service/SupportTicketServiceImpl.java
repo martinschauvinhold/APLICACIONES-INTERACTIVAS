@@ -28,6 +28,14 @@ public class SupportTicketServiceImpl implements SupportTicketService {
     }
 
     @Override
+    public List<SupportTicket> getByUserId(int userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("User", userId);
+        }
+        return ticketRepository.findByUserId(userId);
+    }
+
+    @Override
     public SupportTicket getById(Integer id) {
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("SupportTicket", id));
