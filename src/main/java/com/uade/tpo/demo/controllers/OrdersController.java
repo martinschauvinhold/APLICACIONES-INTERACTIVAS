@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.dto.OrderRequest;
 import com.uade.tpo.demo.entity.dto.OrderResponse;
+import com.uade.tpo.demo.entity.dto.OrderStatusRequest;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.OrderService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("orders")
@@ -100,6 +103,14 @@ public class OrdersController {
         }
         authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         Order result = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(OrderResponse.from(result));
+    }
+
+    @PutMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<OrderResponse> updateStatus(@PathVariable int orderId,
+                                                        @Valid @RequestBody OrderStatusRequest request) {
+        Order result = orderService.updateStatus(orderId, request.status());
         return ResponseEntity.ok(OrderResponse.from(result));
     }
 
