@@ -51,6 +51,31 @@ class SupportTicketServiceTest {
     }
 
     @Test
+    void getByUserId_deberiaRetornarTicketsDelUsuario_cuandoUserExiste() {
+        // Arrange
+        var tickets = List.of(SupportTicket.builder().id(1).subject("No funciona el pago").status(TicketStatus.OPEN).build());
+        when(userRepository.existsById(5)).thenReturn(true);
+        when(ticketRepository.findByUserId(5)).thenReturn(tickets);
+
+        // Act
+        var result = ticketService.getByUserId(5);
+
+        // Assert
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void getByUserId_deberiaLanzarNotFoundException_cuandoUserNoExiste() {
+        // Arrange
+        when(userRepository.existsById(99)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> ticketService.getByUserId(99))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
     void getById_deberiaRetornarTicket_cuandoIdExiste() {
         // Arrange
         var ticket = SupportTicket.builder().id(1).subject("No funciona el pago").status(TicketStatus.OPEN).build();

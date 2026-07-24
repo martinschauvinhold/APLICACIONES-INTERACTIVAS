@@ -829,14 +829,64 @@
           "name": "Listar productos",
           "request": {
             "method": "GET",
-            "header": [],
+            "description": "Listado paginado. Público/buyer: solo activos. Con token de vendedor, además sus propios inactivos. Devuelve un objeto Page (content[] + totalElements, totalPages, number, size).",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Opcional. Con token de vendedor se incluyen sus productos inactivos.",
+                "disabled": true
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/products",
+              "raw": "{{baseUrl}}/products?page=0&size=20",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "Página (0-based). Default 0."
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "Tamaño de página. Default 20."
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc",
+                  "description": "Campo,dirección. Default id.",
+                  "disabled": true
+                },
+                {
+                  "key": "categoryId",
+                  "value": "1",
+                  "description": "Filtrar por categoría.",
+                  "disabled": true
+                },
+                {
+                  "key": "sellerId",
+                  "value": "1",
+                  "description": "Filtrar por vendedor.",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "galaxy",
+                  "description": "Buscar por nombre (case-insensitive).",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "false",
+                  "description": "Filtrar por estado. No amplía visibilidad: para ver inactivos hace falta token del vendedor dueño.",
+                  "disabled": true
+                }
               ]
             }
           }
@@ -868,6 +918,7 @@
           "name": "Crear producto",
           "request": {
             "method": "POST",
+            "description": "Requiere token de un vendedor (rol seller). El producto se crea a nombre del vendedor autenticado; el admin no crea productos.",
             "header": [
               {
                 "key": "Content-Type",
@@ -902,6 +953,7 @@
           "name": "Actualizar producto",
           "request": {
             "method": "PUT",
+            "description": "Requiere token del vendedor dueño del producto. Ni el admin ni otro vendedor pueden editarlo.",
             "header": [
               {
                 "key": "Content-Type",
@@ -943,6 +995,7 @@
           "name": "Eliminar producto",
           "request": {
             "method": "DELETE",
+            "description": "Requiere token del vendedor dueño del producto. El admin no elimina productos.",
             "header": [
               {
                 "key": "Authorization",

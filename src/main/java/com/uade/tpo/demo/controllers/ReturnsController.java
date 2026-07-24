@@ -14,8 +14,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.ProductReturn;
 import com.uade.tpo.demo.entity.dto.ProductReturnRequest;
+import com.uade.tpo.demo.entity.dto.ProductReturnResponse;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
+import com.uade.tpo.demo.service.OrderService;
 import com.uade.tpo.demo.service.ProductReturnService;
 
 import jakarta.validation.Valid;
@@ -27,37 +32,54 @@ import lombok.RequiredArgsConstructor;
 public class ReturnsController {
 
     private final ProductReturnService productReturnService;
+    private final OrderService orderService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<List<ProductReturn>> getReturns() {
-        return ResponseEntity.ok(productReturnService.getReturns());
+    public ResponseEntity<List<ProductReturnResponse>> getReturns() {
+        List<ProductReturnResponse> result = productReturnService.getReturns().stream()
+                .map(ProductReturnResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{returnId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<ProductReturn> getReturnById(@PathVariable Integer returnId) {
-        return ResponseEntity.ok(productReturnService.getReturnById(returnId));
+    public ResponseEntity<ProductReturnResponse> getReturnById(@PathVariable Integer returnId) {
+        ProductReturn productReturn = productReturnService.getReturnById(returnId);
+        authorizationService.requireSelfOrAdmin(productReturn.getOrder().getUser().getId());
+        return ResponseEntity.ok(ProductReturnResponse.from(productReturn));
     }
 
     @GetMapping("/order/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<List<ProductReturn>> getReturnsByOrder(@PathVariable Integer orderId) {
-        return ResponseEntity.ok(productReturnService.getReturnsByOrder(orderId));
+    public ResponseEntity<List<ProductReturnResponse>> getReturnsByOrder(@PathVariable Integer orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        authorizationService.requireSelfOrAdmin(order.getUser().getId());
+        List<ProductReturnResponse> result = productReturnService.getReturnsByOrder(orderId).stream()
+                .map(ProductReturnResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
-    public ResponseEntity<ProductReturn> createReturn(@Valid @RequestBody ProductReturnRequest request) {
+    public ResponseEntity<ProductReturnResponse> createReturn(@Valid @RequestBody ProductReturnRequest request) {
+        Order order = orderService.getOrderById(request.orderId())
+                .orElseThrow(() -> new NotFoundException("Order", request.orderId()));
+        authorizationService.requireSelf(order.getUser().getId());
         ProductReturn created = productReturnService.createReturn(request);
-        return ResponseEntity.created(URI.create("/returns/" + created.getId())).body(created);
+        return ResponseEntity.created(URI.create("/returns/" + created.getId()))
+                .body(ProductReturnResponse.from(created));
     }
 
     @PutMapping("/{returnId}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ProductReturn> updateReturn(@PathVariable Integer returnId,
+    public ResponseEntity<ProductReturnResponse> updateReturn(@PathVariable Integer returnId,
                                                        @Valid @RequestBody ProductReturnRequest request) {
-        return ResponseEntity.ok(productReturnService.updateReturn(returnId, request));
+        return ResponseEntity.ok(ProductReturnResponse.from(productReturnService.updateReturn(returnId, request)));
     }
 
     @DeleteMapping("/{returnId}")

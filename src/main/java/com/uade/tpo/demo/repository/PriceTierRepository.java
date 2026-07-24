@@ -10,4 +10,6 @@ import com.uade.tpo.demo.entity.PriceTier;
 @Repository
 public interface PriceTierRepository extends JpaRepository<PriceTier, Integer> {
     List<PriceTier> findByVariantId(int variantId);
+
+    List<PriceTier> findByVariantIdIn(List<Integer> variantIds);
 }

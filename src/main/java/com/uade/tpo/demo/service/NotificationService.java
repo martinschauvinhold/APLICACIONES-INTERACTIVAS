@@ -11,6 +11,10 @@ public interface NotificationService {
 
     List<Notification> getUnread();
 
+    List<Notification> getUnreadByUser(Integer userId);
+
+    Notification getById(Integer id);
+
     Notification markAsRead(Integer id);
 
     void notify(Integer userId, NotificationType type, String message);

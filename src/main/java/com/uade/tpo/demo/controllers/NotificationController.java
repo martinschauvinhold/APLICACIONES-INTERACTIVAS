@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Notification;
+import com.uade.tpo.demo.entity.dto.NotificationResponse;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,20 +23,27 @@ import lombok.RequiredArgsConstructor;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<List<Notification>> getAll() {
-        return ResponseEntity.ok(notificationService.getAll());
+    public ResponseEntity<List<NotificationResponse>> getAll() {
+        List<NotificationResponse> result = notificationService.getAll().stream().map(NotificationResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/unread")
-    public ResponseEntity<List<Notification>> getUnread() {
-        return ResponseEntity.ok(notificationService.getUnread());
+    public ResponseEntity<List<NotificationResponse>> getUnread() {
+        Integer userId = authorizationService.currentUser().getId();
+        List<NotificationResponse> result = notificationService.getUnreadByUser(userId).stream()
+                .map(NotificationResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{notificationId}/read")
-    public ResponseEntity<Notification> markAsRead(@PathVariable Integer notificationId) {
-        return ResponseEntity.ok(notificationService.markAsRead(notificationId));
+    public ResponseEntity<NotificationResponse> markAsRead(@PathVariable Integer notificationId) {
+        Notification notification = notificationService.getById(notificationId);
+        authorizationService.requireSelfOrAdmin(notification.getUser().getId());
+        return ResponseEntity.ok(NotificationResponse.from(notificationService.markAsRead(notificationId)));
     }
 }

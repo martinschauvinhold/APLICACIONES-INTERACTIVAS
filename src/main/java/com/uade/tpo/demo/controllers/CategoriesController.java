@@ -2,6 +2,7 @@ package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.dto.CategoryRequest;
+import com.uade.tpo.demo.entity.dto.CategoryResponse;
 import com.uade.tpo.demo.service.CategoryService;
 
 @RestController
@@ -31,26 +33,28 @@ public class CategoriesController {
     private CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<Category>> getCategories(Authentication auth) {
+    public ResponseEntity<List<CategoryResponse>> getCategories(Authentication auth) {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_admin"));
         ArrayList<Category> categories = isAdmin
                 ? categoryService.getCategories()
                 : categoryService.getActiveCategories();
-        return ResponseEntity.ok(categories);
+        List<CategoryResponse> result = categories.stream().map(CategoryResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{categoryId}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable int categoryId) {
+    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable int categoryId) {
         Optional<Category> result = categoryService.getCategoryById(categoryId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(c -> ResponseEntity.ok(CategoryResponse.from(c)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         Category result = categoryService.createCategory(categoryRequest.getDescription());
-        return ResponseEntity.created(URI.create("/categories/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/categories/" + result.getId())).body(CategoryResponse.from(result));
     }
 
     @PutMapping("/{categoryId}")
@@ -60,7 +64,7 @@ public class CategoriesController {
         Optional<Category> result = categoryService.getCategoryById(categoryId);
         if (result.isPresent()) {
             Category updated = categoryService.updateCategory(categoryId, categoryRequest.getDescription());
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(CategoryResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }
@@ -69,7 +73,7 @@ public class CategoriesController {
     @PreAuthorize("hasRole('admin')")
     public ResponseEntity<Object> deactivateCategory(@PathVariable int categoryId) {
         Category result = categoryService.deactivateCategory(categoryId);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(CategoryResponse.from(result));
     }
 
     @DeleteMapping("/{categoryId}")

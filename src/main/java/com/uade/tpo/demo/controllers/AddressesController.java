@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Address;
 import com.uade.tpo.demo.entity.dto.AddressRequest;
+import com.uade.tpo.demo.entity.dto.AddressResponse;
 import com.uade.tpo.demo.service.AddressService;
 import com.uade.tpo.demo.service.AuthorizationService;
 
@@ -35,22 +35,24 @@ public class AddressesController {
 
     @GetMapping
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<ArrayList<Address>> getAddresses() {
-        return ResponseEntity.ok(addressService.getAddresses());
+    public ResponseEntity<List<AddressResponse>> getAddresses() {
+        List<AddressResponse> result = addressService.getAddresses().stream().map(AddressResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{addressId}")
     @PreAuthorize("hasRole('admin')")
-    public ResponseEntity<Address> getAddressById(@PathVariable int addressId) {
+    public ResponseEntity<AddressResponse> getAddressById(@PathVariable int addressId) {
         Optional<Address> result = addressService.getAddressById(addressId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(a -> ResponseEntity.ok(AddressResponse.from(a))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Address>> getAddressesByUser(@PathVariable int userId) {
+    public ResponseEntity<List<AddressResponse>> getAddressesByUser(@PathVariable int userId) {
         authorizationService.requireSelfOrAdmin(userId);
-        return ResponseEntity.ok(addressService.getAddressesByUser(userId));
+        List<AddressResponse> result = addressService.getAddressesByUser(userId).stream().map(AddressResponse::from).toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
@@ -58,7 +60,7 @@ public class AddressesController {
     public ResponseEntity<Object> createAddress(@Validated @RequestBody AddressRequest addressRequest) {
         authorizationService.requireSelfOrAdmin(addressRequest.getUserId());
         Address result = addressService.createAddress(addressRequest);
-        return ResponseEntity.created(URI.create("/addresses/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/addresses/" + result.getId())).body(AddressResponse.from(result));
     }
 
     @PutMapping("/{addressId}")
@@ -71,7 +73,7 @@ public class AddressesController {
         }
         authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         Address updated = addressService.updateAddress(addressId, addressRequest);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(AddressResponse.from(updated));
     }
 
     @DeleteMapping("/{addressId}")
