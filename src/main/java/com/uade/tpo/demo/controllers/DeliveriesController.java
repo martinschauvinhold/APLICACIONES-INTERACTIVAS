@@ -15,8 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uade.tpo.demo.entity.Delivery;
+import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.dto.DeliveryRequest;
+import com.uade.tpo.demo.entity.dto.DeliveryResponse;
+import com.uade.tpo.demo.exceptions.NotFoundException;
+import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.DeliveryService;
+import com.uade.tpo.demo.service.OrderService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,35 +32,49 @@ import lombok.RequiredArgsConstructor;
 public class DeliveriesController {
 
     private final DeliveryService deliveryService;
+    private final OrderService orderService;
+    private final AuthorizationService authorizationService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<List<Delivery>> getDeliveries() {
-        return ResponseEntity.ok(deliveryService.getDeliveries());
+    public ResponseEntity<List<DeliveryResponse>> getDeliveries() {
+        List<DeliveryResponse> result = deliveryService.getDeliveries().stream()
+                .map(DeliveryResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{deliveryId}")
-    public ResponseEntity<Delivery> getDeliveryById(@PathVariable Integer deliveryId) {
-        return ResponseEntity.ok(deliveryService.getDeliveryById(deliveryId));
+    public ResponseEntity<DeliveryResponse> getDeliveryById(@PathVariable Integer deliveryId) {
+        Delivery delivery = deliveryService.getDeliveryById(deliveryId);
+        authorizationService.requireSelfOrAdmin(delivery.getOrder().getUser().getId());
+        return ResponseEntity.ok(DeliveryResponse.from(delivery));
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<Delivery>> getDeliveriesByOrder(@PathVariable Integer orderId) {
-        return ResponseEntity.ok(deliveryService.getDeliveriesByOrder(orderId));
+    public ResponseEntity<List<DeliveryResponse>> getDeliveriesByOrder(@PathVariable Integer orderId) {
+        Order order = orderService.getOrderById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+        authorizationService.requireSelfOrAdmin(order.getUser().getId());
+        List<DeliveryResponse> result = deliveryService.getDeliveriesByOrder(orderId).stream()
+                .map(DeliveryResponse::from)
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Delivery> createDelivery(@Valid @RequestBody DeliveryRequest request) {
+    public ResponseEntity<DeliveryResponse> createDelivery(@Valid @RequestBody DeliveryRequest request) {
         Delivery created = deliveryService.createDelivery(request);
-        return ResponseEntity.created(URI.create("/deliveries/" + created.getId())).body(created);
+        return ResponseEntity.created(URI.create("/deliveries/" + created.getId()))
+                .body(DeliveryResponse.from(created));
     }
 
     @PutMapping("/{deliveryId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Delivery> updateDelivery(@PathVariable Integer deliveryId,
+    public ResponseEntity<DeliveryResponse> updateDelivery(@PathVariable Integer deliveryId,
                                                     @Valid @RequestBody DeliveryRequest request) {
-        return ResponseEntity.ok(deliveryService.updateDelivery(deliveryId, request));
+        return ResponseEntity.ok(DeliveryResponse.from(deliveryService.updateDelivery(deliveryId, request)));
     }
 
     @DeleteMapping("/{deliveryId}")

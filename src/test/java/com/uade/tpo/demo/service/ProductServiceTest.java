@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import com.uade.tpo.demo.entity.Category;
 import com.uade.tpo.demo.entity.Product;
@@ -21,9 +23,17 @@ import com.uade.tpo.demo.entity.Role;
 import com.uade.tpo.demo.entity.User;
 import com.uade.tpo.demo.entity.dto.ProductRequest;
 import com.uade.tpo.demo.exceptions.BusinessRuleException;
+import com.uade.tpo.demo.exceptions.ConflictException;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.repository.CategoryRepository;
+import com.uade.tpo.demo.repository.InventoryRepository;
+import com.uade.tpo.demo.repository.OrderItemRepository;
+import com.uade.tpo.demo.repository.PriceTierRepository;
+import com.uade.tpo.demo.repository.ProductImageRepository;
 import com.uade.tpo.demo.repository.ProductRepository;
+import com.uade.tpo.demo.repository.ProductVariantRepository;
+import com.uade.tpo.demo.repository.ReviewRepository;
+import com.uade.tpo.demo.repository.TagRepository;
 import com.uade.tpo.demo.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,22 +48,85 @@ class ProductServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProductImageRepository productImageRepository;
+
+    @Mock
+    private StorageService storageService;
+
+    @Mock
+    private ProductVariantRepository productVariantRepository;
+
+    @Mock
+    private InventoryRepository inventoryRepository;
+
+    @Mock
+    private PriceTierRepository priceTierRepository;
+
+    @Mock
+    private ReviewRepository reviewRepository;
+
+    @Mock
+    private TagRepository tagRepository;
+
+    @Mock
+    private OrderItemRepository orderItemRepository;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
     @Test
-    void getProducts_deberiaRetornarListaCompleta() {
+    void getProducts_deberiaMapearProductosADtoYConservarLaPaginacion() {
         // Arrange
-        var products = List.of(
-                Product.builder().id(1).name("Samsung Galaxy S24").build(),
-                Product.builder().id(2).name("iPhone 15").build());
-        when(productRepository.findAll()).thenReturn(products);
+        var category = Category.builder().id(1).description("Smartphones").build();
+        var seller = User.builder().id(10).username("vendedor1").role(Role.seller).build();
+        var product = Product.builder().id(1).name("iPhone 15").brand("Apple")
+                .category(category).seller(seller).isActive(true).build();
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.search(null, null, Boolean.TRUE, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(product), pageable, 1));
+        when(productImageRepository.findByProduct_IdInAndIsPrimaryTrue(any()))
+                .thenReturn(List.of());
 
         // Act
-        var result = productService.getProducts();
+        var result = productService.getProducts(null, null, null, Boolean.TRUE, null, pageable);
 
         // Assert
-        assertThat(result).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        var dto = result.getContent().get(0);
+        assertThat(dto.id()).isEqualTo(1);
+        assertThat(dto.name()).isEqualTo("iPhone 15");
+        assertThat(dto.categoryName()).isEqualTo("Smartphones");
+        assertThat(dto.sellerId()).isEqualTo(10);
+        assertThat(dto.sellerName()).isEqualTo("vendedor1");
+    }
+
+    @Test
+    void getProducts_deberiaNormalizarBusquedaVaciaANull() {
+        // Arrange
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.search(null, null, null, null, null, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        // Act
+        productService.getProducts(null, null, "   ", null, null, pageable);
+
+        // Assert
+        verify(productRepository).search(null, null, null, null, null, pageable);
+    }
+
+    @Test
+    void getProducts_deberiaPropagarElViewerSellerId() {
+        // Arrange
+        var pageable = PageRequest.of(0, 20);
+        when(productRepository.search(null, null, null, null, 7, pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        // Act
+        productService.getProducts(null, null, null, null, 7, pageable);
+
+        // Assert
+        verify(productRepository).search(null, null, null, null, 7, pageable);
     }
 
     @Test
@@ -157,29 +230,6 @@ class ProductServiceTest {
     }
 
     @Test
-    void updateProduct_deberiaAsignarVendedor_cuandoProductoNoTeniaUno() {
-        // Arrange
-        var category = Category.builder().id(1).description("Smartphones").build();
-        var product = Product.builder().id(1).name("Producto viejo").build();
-        var seller = User.builder().id(3).role(Role.seller).build();
-        var request = new ProductRequest();
-        request.setName("Producto viejo");
-        request.setCategoryId(1);
-        request.setSellerId(3);
-
-        when(productRepository.findById(1)).thenReturn(Optional.of(product));
-        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
-        when(userRepository.findById(3)).thenReturn(Optional.of(seller));
-        when(productRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        // Act
-        var result = productService.updateProduct(1, request);
-
-        // Assert
-        assertThat(result.getSeller()).isEqualTo(seller);
-    }
-
-    @Test
     void updateProduct_noDeberiaReasignarVendedor_cuandoProductoYaTieneUno() {
         // Arrange
         var category = Category.builder().id(1).description("Smartphones").build();
@@ -251,11 +301,27 @@ class ProductServiceTest {
     }
 
     @Test
-    void deleteProduct_deberiaEliminar() {
+    void deleteProduct_deberiaEliminar_cuandoNoTieneVentas() {
+        // Arrange
+        when(orderItemRepository.existsByVariant_ProductId(1)).thenReturn(false);
+        when(productVariantRepository.findByProductId(1)).thenReturn(List.of());
+
         // Act
         productService.deleteProduct(1);
 
         // Assert
         verify(productRepository).deleteById(1);
+    }
+
+    @Test
+    void deleteProduct_deberiaLanzarConflictException_cuandoTieneVentas() {
+        // Arrange
+        when(orderItemRepository.existsByVariant_ProductId(1)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productService.deleteProduct(1))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("ventas");
+        verify(productRepository, org.mockito.Mockito.never()).deleteById(any());
     }
 }

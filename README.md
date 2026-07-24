@@ -1,4 +1,4 @@
-# E-Commerce API
+# Vector Tech — E-commerce (TPO Aplicaciones Interactivas)
 
 API REST construida con Spring Boot 3 y SQL Server.
 

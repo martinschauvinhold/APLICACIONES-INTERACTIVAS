@@ -54,7 +54,8 @@ SELLER_TOKEN=$(login "$SELLER_EMAIL" "$SELLER_PASS")
 [[ -z "$ADMIN_TOKEN"  ]] && die "No pude loguear admin. ¿Corriste 'make seed-db'?"
 [[ -z "$SELLER_TOKEN" ]] && die "No pude loguear seller. ¿Corriste 'make seed-db'?"
 
-PRODUCT_COUNT=$(curl -s -H "Authorization: Bearer $ADMIN_TOKEN" "$BASE/products" | jq 'length // 0')
+# GET /products devuelve un objeto Page ({content, totalElements, ...}), no un array.
+PRODUCT_COUNT=$(curl -s -H "Authorization: Bearer $ADMIN_TOKEN" "$BASE/products" | jq '.totalElements // 0')
 if [[ "${PRODUCT_COUNT:-0}" -gt 5 ]]; then
   ok "Ya hay $PRODUCT_COUNT productos — la base parece poblada. Nada para hacer."
   exit 0

@@ -15,6 +15,8 @@ import com.uade.tpo.demo.entity.Inventory;
 public interface InventoryRepository extends JpaRepository<Inventory, Integer> {
     List<Inventory> findByVariantId(int variantId);
 
+    List<Inventory> findByVariantIdIn(List<Integer> variantIds);
+
     List<Inventory> findByWarehouseId(int warehouseId);
 
     /**

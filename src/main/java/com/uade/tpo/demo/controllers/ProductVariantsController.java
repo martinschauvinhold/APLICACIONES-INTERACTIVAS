@@ -1,7 +1,6 @@
 package com.uade.tpo.demo.controllers;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,12 +17,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
 import com.uade.tpo.demo.entity.dto.PriceTierRequest;
 import com.uade.tpo.demo.entity.dto.PriceTierResponse;
 import com.uade.tpo.demo.entity.dto.ProductVariantRequest;
+import com.uade.tpo.demo.entity.dto.ProductVariantResponse;
 import com.uade.tpo.demo.entity.dto.VariantStockResponse;
 import com.uade.tpo.demo.exceptions.NotFoundException;
 import com.uade.tpo.demo.service.AuthorizationService;
@@ -44,18 +46,19 @@ public class ProductVariantsController {
     private AuthorizationService authorizationService;
 
     @GetMapping
-    public ResponseEntity<ArrayList<ProductVariant>> getVariants() {
+    public ResponseEntity<List<ProductVariantResponse>> getVariants() {
         return ResponseEntity.ok(productVariantService.getVariants());
     }
 
     @GetMapping("/{variantId}")
-    public ResponseEntity<ProductVariant> getVariantById(@PathVariable int variantId) {
+    public ResponseEntity<ProductVariantResponse> getVariantById(@PathVariable int variantId) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
-        return result.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return result.map(v -> ResponseEntity.ok(ProductVariantResponse.from(v)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductVariant>> getVariantsByProduct(@PathVariable int productId) {
+    public ResponseEntity<List<ProductVariantResponse>> getVariantsByProduct(@PathVariable int productId) {
         return ResponseEntity.ok(productVariantService.getVariantsByProduct(productId));
     }
 
@@ -77,7 +80,7 @@ public class ProductVariantsController {
 
     @PostMapping("/{variantId}/tiers")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createTier(@PathVariable int variantId, @RequestBody PriceTierRequest tierRequest) {
+    public ResponseEntity<Object> createTier(@PathVariable int variantId, @Valid @RequestBody PriceTierRequest tierRequest) {
         ProductVariant variant = productVariantService.getVariantById(variantId)
                 .orElseThrow(() -> new NotFoundException("ProductVariant", variantId));
         requireOwnerOrAdmin(variant.getProduct());
@@ -88,7 +91,7 @@ public class ProductVariantsController {
     @PutMapping("/{variantId}/tiers/{tierId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateTier(@PathVariable int variantId, @PathVariable int tierId,
-                                              @RequestBody PriceTierRequest tierRequest) {
+                                              @Valid @RequestBody PriceTierRequest tierRequest) {
         Optional<PriceTier> existing = productVariantService.getTierById(tierId);
         if (existing.isEmpty() || existing.get().getVariant().getId() != variantId) {
             return ResponseEntity.notFound().build();
@@ -100,22 +103,22 @@ public class ProductVariantsController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createVariant(@RequestBody ProductVariantRequest variantRequest) {
+    public ResponseEntity<Object> createVariant(@Valid @RequestBody ProductVariantRequest variantRequest) {
         Product product = productService.getProductById(variantRequest.getProductId())
                 .orElseThrow(() -> new NotFoundException("Product", variantRequest.getProductId()));
         requireOwnerOrAdmin(product);
         ProductVariant result = productVariantService.createVariant(variantRequest);
-        return ResponseEntity.created(URI.create("/variants/" + result.getId())).body(result);
+        return ResponseEntity.created(URI.create("/variants/" + result.getId())).body(ProductVariantResponse.from(result));
     }
 
     @PutMapping("/{variantId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> updateVariant(@PathVariable int variantId, @RequestBody ProductVariantRequest variantRequest) {
+    public ResponseEntity<Object> updateVariant(@PathVariable int variantId, @Valid @RequestBody ProductVariantRequest variantRequest) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
         if (result.isPresent()) {
             requireOwnerOrAdmin(result.get().getProduct());
             ProductVariant updated = productVariantService.updateVariant(variantId, variantRequest);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(ProductVariantResponse.from(updated));
         }
         return ResponseEntity.notFound().build();
     }

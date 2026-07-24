@@ -32,6 +32,17 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public List<Notification> getUnreadByUser(Integer userId) {
+        return notificationRepository.findByUserIdAndIsRead(userId, false);
+    }
+
+    @Override
+    public Notification getById(Integer id) {
+        return notificationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Notification", id));
+    }
+
+    @Override
     @Transactional
     public Notification markAsRead(Integer id) {
         var notification = notificationRepository.findById(id)

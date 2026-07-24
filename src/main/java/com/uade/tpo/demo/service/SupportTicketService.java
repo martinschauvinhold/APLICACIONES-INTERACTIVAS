@@ -10,6 +10,8 @@ public interface SupportTicketService {
 
     List<SupportTicket> getAll();
 
+    List<SupportTicket> getByUserId(int userId);
+
     SupportTicket getById(Integer id);
 
     SupportTicket create(SupportTicketRequest request);
