@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.uade.tpo.demo.entity.PriceTier;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
@@ -78,7 +80,7 @@ public class ProductVariantsController {
 
     @PostMapping("/{variantId}/tiers")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createTier(@PathVariable int variantId, @RequestBody PriceTierRequest tierRequest) {
+    public ResponseEntity<Object> createTier(@PathVariable int variantId, @Valid @RequestBody PriceTierRequest tierRequest) {
         ProductVariant variant = productVariantService.getVariantById(variantId)
                 .orElseThrow(() -> new NotFoundException("ProductVariant", variantId));
         requireOwnerOrAdmin(variant.getProduct());
@@ -89,7 +91,7 @@ public class ProductVariantsController {
     @PutMapping("/{variantId}/tiers/{tierId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
     public ResponseEntity<Object> updateTier(@PathVariable int variantId, @PathVariable int tierId,
-                                              @RequestBody PriceTierRequest tierRequest) {
+                                              @Valid @RequestBody PriceTierRequest tierRequest) {
         Optional<PriceTier> existing = productVariantService.getTierById(tierId);
         if (existing.isEmpty() || existing.get().getVariant().getId() != variantId) {
             return ResponseEntity.notFound().build();
@@ -101,7 +103,7 @@ public class ProductVariantsController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> createVariant(@RequestBody ProductVariantRequest variantRequest) {
+    public ResponseEntity<Object> createVariant(@Valid @RequestBody ProductVariantRequest variantRequest) {
         Product product = productService.getProductById(variantRequest.getProductId())
                 .orElseThrow(() -> new NotFoundException("Product", variantRequest.getProductId()));
         requireOwnerOrAdmin(product);
@@ -111,7 +113,7 @@ public class ProductVariantsController {
 
     @PutMapping("/{variantId}")
     @PreAuthorize("hasAnyRole('seller', 'admin')")
-    public ResponseEntity<Object> updateVariant(@PathVariable int variantId, @RequestBody ProductVariantRequest variantRequest) {
+    public ResponseEntity<Object> updateVariant(@PathVariable int variantId, @Valid @RequestBody ProductVariantRequest variantRequest) {
         Optional<ProductVariant> result = productVariantService.getVariantById(variantId);
         if (result.isPresent()) {
             requireOwnerOrAdmin(result.get().getProduct());

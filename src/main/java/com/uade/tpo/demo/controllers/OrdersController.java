@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uade.tpo.demo.entity.Order;
 import com.uade.tpo.demo.entity.dto.OrderRequest;
 import com.uade.tpo.demo.entity.dto.OrderResponse;
+import com.uade.tpo.demo.entity.dto.OrderStatusRequest;
 import com.uade.tpo.demo.service.AuthorizationService;
 import com.uade.tpo.demo.service.OrderService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("orders")
@@ -60,7 +63,7 @@ public class OrdersController {
 
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
-    public ResponseEntity<Object> createOrder(@RequestBody OrderRequest orderRequest) {
+    public ResponseEntity<Object> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
         // El comprador solo puede crear órdenes para sí mismo: se ignora
         // cualquier userId que venga en el body y se usa el del JWT.
         orderRequest.setUserId(authorizationService.currentUser().getId());
@@ -70,7 +73,7 @@ public class OrdersController {
 
     @PutMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<Object> updateOrder(@PathVariable int orderId, @RequestBody OrderRequest orderRequest) {
+    public ResponseEntity<Object> updateOrder(@PathVariable int orderId, @Valid @RequestBody OrderRequest orderRequest) {
         Optional<Order> result = orderService.getOrderById(orderId);
         if (result.isPresent()) {
             authorizationService.requireSelfOrAdmin(result.get().getUser().getId());
@@ -100,6 +103,14 @@ public class OrdersController {
         }
         authorizationService.requireSelfOrAdmin(existing.get().getUser().getId());
         Order result = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(OrderResponse.from(result));
+    }
+
+    @PutMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('admin')")
+    public ResponseEntity<OrderResponse> updateStatus(@PathVariable int orderId,
+                                                        @Valid @RequestBody OrderStatusRequest request) {
+        Order result = orderService.updateStatus(orderId, request.status());
         return ResponseEntity.ok(OrderResponse.from(result));
     }
 

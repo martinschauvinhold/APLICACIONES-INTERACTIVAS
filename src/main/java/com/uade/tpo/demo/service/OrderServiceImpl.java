@@ -284,6 +284,31 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.save(order);
     }
 
+    // Progresión de fulfillment después del pago. PENDING/CANCELLED quedan
+    // afuera a propósito: un pedido sin pagar no puede empezar a prepararse,
+    // y uno cancelado no puede reactivarse por acá (para eso no hay vuelta).
+    private static final List<OrderStatus> FULFILLMENT_ORDER = List.of(
+            OrderStatus.PAID, OrderStatus.PREPARING, OrderStatus.SHIPPED,
+            OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED);
+
+    @Override
+    @Transactional
+    public Order updateStatus(int orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order", orderId));
+
+        OrderStatus current = order.getStatus();
+        int currentIdx = FULFILLMENT_ORDER.indexOf(current);
+        int newIdx = FULFILLMENT_ORDER.indexOf(newStatus);
+        if (currentIdx < 0 || newIdx < 0 || newIdx <= currentIdx) {
+            throw new BusinessRuleException("Transición de estado inválida: " + current + " -> " + newStatus);
+        }
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(new Date());
+        return orderRepository.save(order);
+    }
+
     // Calcula el valor en $ de un descuento aplicado a un precio unitario.
     // PERCENTAGE: porcentaje sobre el precio. FIXED: monto fijo.
     // Comparación case-insensitive: discountType/appliesTo son VARCHAR libres en la

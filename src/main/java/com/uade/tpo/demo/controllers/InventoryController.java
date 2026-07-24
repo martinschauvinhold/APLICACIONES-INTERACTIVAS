@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.uade.tpo.demo.entity.Inventory;
 import com.uade.tpo.demo.entity.Product;
 import com.uade.tpo.demo.entity.ProductVariant;
@@ -67,7 +69,7 @@ public class InventoryController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> createInventory(@RequestBody InventoryRequest inventoryRequest) {
+    public ResponseEntity<Object> createInventory(@Valid @RequestBody InventoryRequest inventoryRequest) {
         ProductVariant variant = productVariantService.getVariantById(inventoryRequest.getVariantId())
                 .orElseThrow(() -> new NotFoundException("ProductVariant", inventoryRequest.getVariantId()));
         requireOwnerOrAdmin(variant.getProduct());
@@ -76,7 +78,7 @@ public class InventoryController {
     }
 
     @PutMapping("/{inventoryId}")
-    public ResponseEntity<Object> updateInventory(@PathVariable int inventoryId, @RequestBody InventoryRequest inventoryRequest) {
+    public ResponseEntity<Object> updateInventory(@PathVariable int inventoryId, @Valid @RequestBody InventoryRequest inventoryRequest) {
         Optional<Inventory> result = inventoryService.getInventoryById(inventoryId);
         if (result.isPresent()) {
             requireOwnerOrAdmin(result.get().getVariant().getProduct());

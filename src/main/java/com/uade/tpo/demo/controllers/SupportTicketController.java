@@ -48,6 +48,15 @@ public class SupportTicketController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<SupportTicketResponse>> getByUserId(@PathVariable int userId) {
+        authorizationService.requireSelfOrAdmin(userId);
+        List<SupportTicketResponse> result = ticketService.getByUserId(userId).stream()
+                .map(SupportTicketResponse::from).toList();
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/{ticketId}")
     public ResponseEntity<SupportTicketResponse> getById(@PathVariable Integer ticketId) {
         SupportTicket ticket = ticketService.getById(ticketId);
