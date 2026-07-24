@@ -63,7 +63,7 @@ public class OrdersController {
 
     @PostMapping
     @PreAuthorize("hasRole('buyer')")
-    public ResponseEntity<Object> createOrder(@RequestBody OrderRequest orderRequest) {
+    public ResponseEntity<Object> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
         // El comprador solo puede crear órdenes para sí mismo: se ignora
         // cualquier userId que venga en el body y se usa el del JWT.
         orderRequest.setUserId(authorizationService.currentUser().getId());
@@ -73,7 +73,7 @@ public class OrdersController {
 
     @PutMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('buyer', 'admin')")
-    public ResponseEntity<Object> updateOrder(@PathVariable int orderId, @RequestBody OrderRequest orderRequest) {
+    public ResponseEntity<Object> updateOrder(@PathVariable int orderId, @Valid @RequestBody OrderRequest orderRequest) {
         Optional<Order> result = orderService.getOrderById(orderId);
         if (result.isPresent()) {
             authorizationService.requireSelfOrAdmin(result.get().getUser().getId());
