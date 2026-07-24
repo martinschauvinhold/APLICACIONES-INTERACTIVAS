@@ -9,6 +9,7 @@ public class ProductRequest {
     @NotBlank private String name;
     private String description;
     private String brand;
+    private String imageUrl;
     @Positive private int categoryId;
     // Lo completa el controller con el id del vendedor autenticado; el valor que
     // mande el cliente se ignora (un producto siempre pertenece a su vendedor).
