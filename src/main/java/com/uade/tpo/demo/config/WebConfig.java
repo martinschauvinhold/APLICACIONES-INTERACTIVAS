@@ -1,5 +1,8 @@
 package com.uade.tpo.demo.config;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +25,19 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String location = Paths.get(uploadsDir).toAbsolutePath().normalize().toUri().toString();
+        Path dir = Paths.get(uploadsDir).toAbsolutePath().normalize();
+        // Crear la carpeta si aún no existe: si no, Path.toUri() no agrega la barra
+        // final y Spring trata la ubicación como un archivo, devolviendo 404 en las
+        // imágenes hasta el próximo reinicio (p. ej. tras un arranque limpio o wipe-db).
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException ignored) {
+            // Si falla, StorageService fallará al escribir con un error más claro.
+        }
+        String location = dir.toUri().toString();
+        if (!location.endsWith("/")) {
+            location += "/";
+        }
         registry.addResourceHandler(urlPath + "/**")
                 .addResourceLocations(location);
     }
